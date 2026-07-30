@@ -1,0 +1,97 @@
+[.configuration-legend]
+icon:lock[title=Fixed at build time] Configuration property fixed at build time - All other configuration properties are overridable at runtime
+[.configuration-reference.searchable, cols="80,.^10,.^10"]
+|===
+
+h|[.header-title]##Configuration property##
+h|Type
+h|Default
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-enabled]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-enabled[`+++quarkus.banner-generator.enabled+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.enabled+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+Whether the banner should be generated at build time.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_ENABLED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_ENABLED+++`
+endif::add-copy-button-to-env-var[]
+--
+|boolean
+|`+++true+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-text]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-text[`+++quarkus.banner-generator.text+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.text+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The text to render as a FIGlet banner. When not set, the application name (`quarkus.application.name`) is used.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_TEXT+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_TEXT+++`
+endif::add-copy-button-to-env-var[]
+--
+|string
+|
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-font]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-font[`+++quarkus.banner-generator.font+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.font+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The FIGlet font used to render the banner.
+
+Must be one of the fonts bundled with, and tested against, this extension (for example `standard`, `slant`, `doom`, `big` or `colossal`). The value is the font's name, matched case-insensitively; the full list is in `FIGLET-FONTS.md`. An unknown font is a build-time error.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_FONT+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_FONT+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`F_1ROW`, `F_3_D`, `F_3D_DIAGONAL`, `F_3X5`, `F_4MAX`, `F_5LINEOBLIQUE`, `B1FF`, `DANC4`, `ICL_1900`, `ACROBATIC`, `ALLIGATOR`, `ALLIGATOR2`, `ALPHA`, `ALPHABET`, `AMC3LINE`, `AMC3LIV1`, `AMCAAA01`, `AMCNEKO`, `AMCRAZO2`, `AMCRAZOR`, `AMCSLASH`, `AMCSLDER`, `AMCTHIN`, `AMCTUBES`, `AMCUN1`, `ARROWS`, `ASCII_NEW_ROMAN`, `AVATAR`, `BANNER3`, `BANNER3_D`, `BANNER4`, `BARBWIRE`, `BASIC`, `BEAR`, `BELL`, `BENJAMIN`, `BIG`, `BIGCHIEF`, `BIGFIG`, `BINARY`, `BLOCK`, `BLOCKS`, `BOLGER`, `BRACED`, `BRIGHT`, `BROADWAY`, `BUBBLE`, `BULBHEAD`, `CALGPHY2`, `CALIGRAPHY`, `CARDS`, `CATWALK`, `CHISELED`, `CHUNKY`, `COINSTAK`, `COLA`, `COLOSSAL`, `COMPUTER`, `CONTESSA`, `CONTRAST`, `COSMIC`, `COSMIKE`, `CRAWFORD`, `CRAZY`, `CRICKET`, `CYBERLARGE`, `CYBERMEDIUM`, `CYBERSMALL`, `CYGNET`, `DANCINGFONT`, `DECIMAL`, `DEFLEPPARD`, `DIAMOND`, `DIETCOLA`, `DIGITAL`, `DOH`, `DOOM`, `DOSREBEL`, `DOTMATRIX`, `DOUBLE`, `DOUBLESHORTS`, `DRPEPPER`, `DWHISTLED`, `EFTICHESS`, `EFTIFONT`, `EFTIPITI`, `EFTIROBOT`, `EFTITALIC`, `EFTIWALL`, `EFTIWATER`, `EPIC`, `FENDER`, `FIRE_FONT_K`, `FIRE_FONT_S`, `FLIPPED`, `FLOWERPOWER`, `FOURTOPS`, `FRAKTUR`, `FUNFACE`, `FUNFACES`, `FUZZY`, `GEORGI16`, `GHOST`, `GHOULISH`, `GLENYN`, `GOOFY`, `GOTHIC`, `GRADIENT`, `GRAFFITI`, `HENRY3D`, `HEX`, `HIEROGLYPHS`, `HOLLYWOOD`, `HORIZONTALLEFT`, `HORIZONTALRIGHT`, `IMPOSSIBLE`, `INVITA`, `ISOMETRIC1`, `ISOMETRIC2`, `ISOMETRIC3`, `ISOMETRIC4`, `ITALIC`, `JAZMINE`, `JERUSALEM`, `KATAKANA`, `KBAN`, `KEYBOARD`, `KNOB`, `KONTO`, `KONTOSLANT`, `LARRY3D`, `LCD`, `LEAN`, `LETTERS`, `LILDEVIL`, `LINEBLOCKS`, `LINUX`, `LOCKERGNOME`, `MADRID`, `MARQUEE`, `MERLIN1`, `MERLIN2`, `MIKE`, `MINI`, `MIRROR`, `MORSE`, `MORSE2`, `MOSCOW`, `MSHEBREW210`, `MUZZLE`, `NANCYJ`, `NANCYJ_FANCY`, `NANCYJ_IMPROVED`, `NANCYJ_UNDERLINED`, `NIPPLES`, `NSCRIPT`, `NTGREEK`, `NVSCRIPT`, `O8`, `OCTAL`, `OGRE`, `OLDBANNER`, `OS2`, `PAWP`, `PEAKS`, `PEAKSSLANT`, `PEBBLES`, `PEPPER`, `POISON`, `PUFFY`, `PUZZLE`, `RAMMSTEIN`, `RECTANGLES`, `RED_PHOENIX`, `RELIEF`, `RELIEF2`, `REVERSE`, `ROMAN`, `ROT13`, `ROTATED`, `ROUNDED`, `ROWANCAP`, `ROZZO`, `RUNIC`, `RUNYC`, `S_RELIEF`, `SANTACLARA`, `SBLOOD`, `SCRIPT`, `SERIFCAP`, `SHADOW`, `SHIMROD`, `SHORT`, `SLANT`, `SLIDE`, `SLSCRIPT`, `SMALL`, `SMALLCAPS`, `SMISOME1`, `SMKEYBOARD`, `SMPOISON`, `SMSCRIPT`, `SMSHADOW`, `SMSLANT`, `SMTENGWAR`, `SOFT`, `SPEED`, `SPLIFF`, `STACEY`, `STAMPATE`, `STAMPATELLO`, `STANDARD`, `STARSTRIPS`, `STARWARS`, `STELLAR`, `STOP`, `STRAIGHT`, `SUB_ZERO`, `SWAMPLAND`, `SWAN`, `TANJA`, `TENGWAR`, `TERM`, `TEST1`, `THICK`, `THIN`, `THREEPOINT`, `TICKS`, `TICKSSLANT`, `TILES`, `TINKER_TOY`, `TOMBSTONE`, `TRAIN`, `TREK`, `TSALAGI`, `TUBULAR`, `TWISTED`, `TWOPOINT`, `UNIVERS`, `USAFLAG`, `VARSITY`, `WAVY`, `WEIRD`, `WETLETTER`, `WHIMSY`, `WOW`
+|`+++standard+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-power-by]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-power-by[`+++quarkus.banner-generator.power-by+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.power-by+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+True if the Power by Quarkus tag line is to be displated
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_POWER_BY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_POWER_BY+++`
+endif::add-copy-button-to-env-var[]
+--
+|boolean
+|`+++true+++`
+
+|===
+

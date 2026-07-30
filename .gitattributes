@@ -1,0 +1,3 @@
+# FIGlet font files are data files whose exact bytes matter (the parser is sensitive to their
+# original content). Do not normalise line endings on commit/checkout.
+*.flf -text

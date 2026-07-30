@@ -1,0 +1,10 @@
+name: Quarkus Banner Extension
+description: Generate a FIGlet ASCII-art startup banner at build time from a text and font.
+metadata:
+  keywords:
+    - banner
+    - figlet
+  guide: https://docs.quarkiverse.io/quarkus-banner/dev/ # To create and publish this guide, see https://github.com/quarkiverse/quarkiverse/wiki#documenting-your-extension
+  categories:
+    - "miscellaneous"
+  status: "preview"

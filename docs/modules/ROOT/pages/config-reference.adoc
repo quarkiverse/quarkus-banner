@@ -1,0 +1,5 @@
+= Configuration Reference
+
+include::./includes/attributes.adoc[]
+
+include::includes/quarkus-banner.adoc[leveloffset=+1, opts=optional]
