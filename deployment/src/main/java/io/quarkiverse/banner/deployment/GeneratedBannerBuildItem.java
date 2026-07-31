@@ -1,4 +1,4 @@
-package io.quarkiverse.quarkus.banner.deployment;
+package io.quarkiverse.banner.deployment;
 
 import io.quarkus.builder.item.SimpleBuildItem;
 

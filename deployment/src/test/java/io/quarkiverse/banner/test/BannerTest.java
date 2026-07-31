@@ -1,4 +1,4 @@
-package io.quarkiverse.quarkus.banner.test;
+package io.quarkiverse.banner.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

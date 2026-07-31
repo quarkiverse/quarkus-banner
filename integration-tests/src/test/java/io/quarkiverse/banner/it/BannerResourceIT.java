@@ -1,4 +1,4 @@
-package io.quarkiverse.quarkus.banner.it;
+package io.quarkiverse.banner.it;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 

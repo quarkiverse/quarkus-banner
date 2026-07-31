@@ -1,4 +1,4 @@
-package io.quarkiverse.quarkus.banner.deployment;
+package io.quarkiverse.banner.deployment;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.quarkus.banner.runtime.BannerConfig;
-import io.quarkiverse.quarkus.banner.runtime.BannerRecorder;
+import io.quarkiverse.banner.runtime.BannerConfig;
+import io.quarkiverse.banner.runtime.BannerRecorder;
 import io.quarkus.builder.Version;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;

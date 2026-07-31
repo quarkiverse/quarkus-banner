@@ -1,6 +1,6 @@
 # Quarkus Banner
 
-[![Version](https://img.shields.io/maven-central/v/io.quarkiverse.quarkus-banner/quarkus-banner?logo=apache-maven&style=flat-square)](https://central.sonatype.com/artifact/io.quarkiverse.quarkus-banner/quarkus-banner-parent)
+[![Version](https://img.shields.io/maven-central/v/io.quarkiverse.banner/quarkus-banner?logo=apache-maven&style=flat-square)](https://central.sonatype.com/artifact/io.quarkiverse.banner/quarkus-banner-parent)
 [![Build](https://github.com/quarkiverse/quarkus-banner/actions/workflows/build.yml/badge.svg)](https://github.com/quarkiverse/quarkus-banner/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0)
 
@@ -36,7 +36,7 @@ Add the dependency to your `pom.xml`:
 ```xml
 
 <dependency>
-    <groupId>io.quarkiverse.quarkus-banner</groupId>
+    <groupId>io.quarkiverse.banner</groupId>
     <artifactId>quarkus-banner</artifactId>
     <version>{version}</version>
 </dependency>
@@ -45,7 +45,7 @@ Add the dependency to your `pom.xml`:
 For Gradle, add to your `build.gradle`:
 
 ```gradle
-implementation("io.quarkiverse.quarkus-banner:quarkus-banner:{version}")
+implementation("io.quarkiverse.banner:quarkus-banner:{version}")
 ```
 
 ## Usage
