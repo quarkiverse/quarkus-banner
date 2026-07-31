@@ -9,7 +9,7 @@
     </parent>
     <groupId>io.quarkiverse.banner</groupId>
     <artifactId>quarkus-banner-parent</artifactId>
-    <version>1.0.1</version>
+    <version>999-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Quarkus Banner Extension - Parent</name>
 
@@ -22,7 +22,7 @@
         <connection>scm:git:git@github.com:quarkiverse/quarkus-banner.git</connection>
         <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-banner.git</developerConnection>
         <url>https://github.com/quarkiverse/quarkus-banner</url>
-      <tag>1.0.1</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
