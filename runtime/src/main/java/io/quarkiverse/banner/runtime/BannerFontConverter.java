@@ -1,4 +1,4 @@
-package io.quarkiverse.quarkus.banner.runtime;
+package io.quarkiverse.banner.runtime;
 
 import org.eclipse.microprofile.config.spi.Converter;
 

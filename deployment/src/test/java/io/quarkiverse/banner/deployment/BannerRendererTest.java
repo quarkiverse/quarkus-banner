@@ -1,4 +1,4 @@
-package io.quarkiverse.quarkus.banner.deployment;
+package io.quarkiverse.banner.deployment;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import io.quarkiverse.quarkus.banner.runtime.BannerFont;
+import io.quarkiverse.banner.runtime.BannerFont;
 
 class BannerRendererTest {
 

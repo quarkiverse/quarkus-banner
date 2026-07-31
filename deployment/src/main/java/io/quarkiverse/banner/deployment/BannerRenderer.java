@@ -1,11 +1,11 @@
-package io.quarkiverse.quarkus.banner.deployment;
+package io.quarkiverse.banner.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import com.github.lalyos.jfiglet.FigletFont;
 
-import io.quarkiverse.quarkus.banner.runtime.BannerFont;
+import io.quarkiverse.banner.runtime.BannerFont;
 
 /**
  * Renders a piece of text into a FIGlet ASCII-art banner using jfiglet, using one of the fonts bundled with
@@ -14,7 +14,7 @@ import io.quarkiverse.quarkus.banner.runtime.BannerFont;
 final class BannerRenderer {
 
     /** Classpath location of the FIGlet fonts bundled with this extension. */
-    static final String BUNDLED_FONTS_DIR = "/io/quarkiverse/quarkus/banner/fonts/";
+    static final String BUNDLED_FONTS_DIR = "/io/quarkiverse/banner/fonts/";
 
     private BannerRenderer() {
     }

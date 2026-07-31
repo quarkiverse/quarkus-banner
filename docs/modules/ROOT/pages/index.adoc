@@ -38,14 +38,14 @@ dev mode).
 
 == Installation
 
-To use this extension, add the `io.quarkiverse.quarkus-banner:quarkus-banner` dependency to your build file.
+To use this extension, add the `io.quarkiverse.banner:quarkus-banner` dependency to your build file.
 
 With Maven, add the following to your `pom.xml`:
 
 [source,xml,subs=attributes+]
 ----
 <dependency>
-    <groupId>io.quarkiverse.quarkus-banner</groupId>
+    <groupId>io.quarkiverse.banner</groupId>
     <artifactId>quarkus-banner</artifactId>
     <version>{project-version}</version>
 </dependency>
@@ -55,7 +55,7 @@ With Gradle, add the following to your `build.gradle`:
 
 [source,gradle,subs=attributes+]
 ----
-implementation("io.quarkiverse.quarkus-banner:quarkus-banner:{project-version}")
+implementation("io.quarkiverse.banner:quarkus-banner:{project-version}")
 ----
 
 == Usage
