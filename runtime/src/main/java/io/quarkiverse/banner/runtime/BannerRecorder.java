@@ -22,8 +22,13 @@ public class BannerRecorder {
      * to the standard Quarkus console formatter for the actual log records. This mirrors how Quarkus core renders
      * its own banner (via {@link TextBannerFormatter}), while honouring the user's console format and colour
      * settings.
+     * <p>
+     * When {@code showBanner} is {@code false} the plain delegate formatter is returned instead, so the banner is
+     * not repainted. A formatter is still supplied in that case so Quarkus core's own banner stays suppressed; this
+     * lets dev-mode hot reloads that don't change the banner stay quiet while still forcing a reprint when it does
+     * change.
      */
-    public RuntimeValue<Optional<Formatter>> bannerFormatter(String banner) {
+    public RuntimeValue<Optional<Formatter>> bannerFormatter(String banner, boolean showBanner) {
         Config config = ConfigProvider.getConfig();
 
         String format = config.getOptionalValue("quarkus.log.console.format", String.class)
@@ -35,6 +40,10 @@ public class BannerRecorder {
                 .orElseGet(BannerRecorder::hasColorSupport);
 
         PatternFormatter delegate = color ? new ColorPatternFormatter(darken, format) : new PatternFormatter(format);
+
+        if (!showBanner) {
+            return new RuntimeValue<>(Optional.of(delegate));
+        }
 
         String text = banner.endsWith("\n") ? banner : banner + "\n";
         Formatter formatter = new TextBannerFormatter(TextBannerFormatter.createStringSupplier(text), delegate);
