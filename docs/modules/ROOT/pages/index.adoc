@@ -33,7 +33,8 @@ Unlike Quarkus' own banner, the generated banner is also shown when running test
 [NOTE]
 ====
 Because the banner is baked at build time, changing the text or font requires a rebuild (or a live-reload in
-dev mode).
+dev mode). In dev mode a live-reload only runs on the next HTTP request to the application, so for a quick
+edit-and-see loop use the <<_dev_ui,Dev UI>> card instead -- it renders on demand with no restart.
 ====
 
 == Installation
@@ -110,3 +111,44 @@ profile only*:
 ----
 
 This has no effect in production -- the interactive console only runs in dev and test modes.
+
+[#_dev_ui]
+== Dev UI
+
+Because the banner is rendered at build time, changing `quarkus.banner-generator.text` or `...font` in
+`application.properties` only takes effect on the next live-reload -- and in dev mode a live-reload is only
+triggered by the next HTTP request to the application. For a service that receives no requests while you work
+on it, nothing appears to happen when you save the file.
+
+To make trying fonts and text quick and immediate, the extension contributes a *Quarkus Banner* card to the
+https://quarkus.io/guides/dev-ui[Dev UI], available in dev mode at `http://localhost:8080/q/dev-ui/`.
+
+Open the card's *Preview* page to test and check your banner:
+
+* *Text* -- type any text to render. It defaults to the configured `quarkus.banner-generator.text` (or the
+  application name).
+* *Font* -- pick any of the bundled fonts from the selector. It defaults to the configured font.
+* *Powered by Quarkus* -- toggle the tagline that is appended under the banner.
+
+The preview updates live as you change any of these -- no restart and no HTTP request required -- so you can
+compare fonts and wording instantly. The rendering uses the exact same code path as the start-up banner, so
+what you see is what you get at boot.
+
+Press *Print to log* to render the current text and font straight to the application console, exactly as the
+start-up banner would appear:
+
+[source,text]
+----
+ _____  ______      __  ___    _ _____   _______ ______  _____ _______
+|  __ \|  ____\ \    / / |  | |_   _| |__   __|  ____|/ ____|__   __|
+| |  | | |__   \ \  / /| |  | | | |      | |  | |__  | (___    | |
+| |  | |  __|   \ \/ / | |  | | | |      | |  |  __|  \___ \   | |
+| |__| | |____   \  /  | |__| |_| |_     | |  | |____ ____) |  | |
+|_____/|______|   \/    \____/|_____|    |_|  |______|_____/   |_|
+
+                                            Powered by Quarkus 3.x.x
+----
+
+Once you settle on a text and font, set them in `application.properties` so they are baked into the build.
+
+Every setting on the card is a preview only: it never changes your configuration or the installed banner.

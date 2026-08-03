@@ -27,7 +27,10 @@ the console log handler — the exact mechanism Quarkus uses for its own banner.
 - Quarkus' built-in banner is replaced automatically (you don't need to set `quarkus.banner.enabled=false`);
 - if generation is disabled, or the text can't be rendered, the default Quarkus banner is left untouched.
 
-Because the banner is baked at build time, changing the text or font requires a rebuild (or a live-reload in dev mode).
+Because the banner is baked at build time, changing the text or font requires a rebuild (or a live-reload in dev mode). In dev
+mode the banner is repainted only when it actually changes — the first start always shows it, and after that it is reprinted
+only when the rendered banner differs (a new `text`, `font` or `power-by`), so ordinary hot reloads don't repeat it. As with all
+Quarkus live reload, the change is applied on the next request to the application.
 
 ## Installation
 
@@ -95,6 +98,14 @@ Quarkus' own banner too, not just this extension. If you want the banner to surv
 ```
 
 This has no effect in production (the interactive console only runs in dev and test modes).
+
+### Dev UI
+
+In dev mode the extension adds a **Quarkus Banner** card to the Dev UI (`http://localhost:8080/q/dev-ui/`). Its **Preview**
+page lets you type any text, pick any bundled font, and toggle the *Powered by Quarkus* tagline, with a live preview of the
+rendered banner — no restart and no HTTP request needed. A **Print to log** button renders the banner straight to the
+application console. Because a build-time config change only takes effect on the next request in dev mode, the Dev UI is the
+quickest way to try fonts and text while iterating.
 
 ## Documentation
 

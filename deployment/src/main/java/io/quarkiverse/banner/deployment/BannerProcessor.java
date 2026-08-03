@@ -8,11 +8,11 @@ import org.jboss.logging.Logger;
 
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerRecorder;
-import io.quarkus.builder.Version;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.builditem.LogConsoleFormatBuildItem;
 
 // Optional<BuildItem> parameters are the idiomatic way to optionally consume a build item in Quarkus.
@@ -43,17 +43,10 @@ class BannerProcessor {
                         .orElse("Quarkus"));
 
         try {
-            String bannerText = BannerRenderer.render(config.font(), text);
-            StringBuilder banner = new StringBuilder(bannerText);
-            if (config.powerBy()) {
-                int width = bannerText.lines().mapToInt(String::length).max().orElse(0);
-                String poweredBy = "Powered by Quarkus " + Version.getVersion();
-                int padding = Math.max(0, width - poweredBy.length());
-                banner.append(" ".repeat(padding)).append(poweredBy).append('\n').append('\n');
-            }
+            String banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy());
 
             LOG.debugf("Generated banner for '%s' using font '%s'", text, config.font().fileName());
-            return new GeneratedBannerBuildItem(banner.toString());
+            return new GeneratedBannerBuildItem(banner);
         } catch (IOException ex) {
             LOG.warnf(ex, "Unable to generate banner for text '%s' with font '%s'; keeping the default banner",
                     text, config.font().fileName());
@@ -69,12 +62,37 @@ class BannerProcessor {
      * <p>
      * Unlike core's banner (which is {@code IsTest}-gated), this is also installed in test mode, so the banner is
      * visible when running tests too.
+     * <p>
+     * In dev mode the augmentation re-runs on every restart, so the banner would otherwise be repainted on every
+     * hot reload. To avoid that noise while still reflecting configuration changes, the last rendered banner is
+     * remembered in the {@link LiveReloadBuildItem} context: the banner is only printed on the first start or when
+     * its rendered text actually changed (a new {@code text}, {@code font} or {@code power-by}). On an unchanged
+     * hot reload a plain formatter is installed instead, which keeps core's banner suppressed without repainting.
      */
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
-    LogConsoleFormatBuildItem installBanner(Optional<GeneratedBannerBuildItem> banner, BannerRecorder recorder) {
-        return banner
-                .map(b -> new LogConsoleFormatBuildItem(recorder.bannerFormatter(b.getText())))
-                .orElse(null);
+    LogConsoleFormatBuildItem installBanner(Optional<GeneratedBannerBuildItem> banner, BannerRecorder recorder,
+            LiveReloadBuildItem liveReload) {
+        if (banner.isEmpty()) {
+            return null;
+        }
+
+        String text = banner.get().getText();
+        BannerContext previous = liveReload.getContextObject(BannerContext.class);
+        boolean showBanner = !liveReload.isLiveReload() || previous == null || !text.equals(previous.text());
+        liveReload.setContextObject(BannerContext.class, new BannerContext(text));
+
+        if (showBanner && liveReload.isLiveReload()) {
+            LOG.debug("Banner changed; repainting it on live reload");
+        }
+
+        return new LogConsoleFormatBuildItem(recorder.bannerFormatter(text, showBanner));
+    }
+
+    /**
+     * Remembers the banner rendered on the previous augmentation so a hot reload can tell whether it changed.
+     * Stored in the {@link LiveReloadBuildItem} context, which survives dev-mode restarts.
+     */
+    record BannerContext(String text) {
     }
 }
