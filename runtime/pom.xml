@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.quarkiverse.banner</groupId>
         <artifactId>quarkus-banner-parent</artifactId>
-        <version>1.1.0</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <artifactId>quarkus-banner</artifactId>
     <name>Quarkus Banner Extension - Runtime</name>
