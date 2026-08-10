@@ -21,8 +21,9 @@ import io.quarkus.devui.spi.page.Page;
  * Contributes a Dev UI card for the extension that lets you preview the banner with any bundled font and text
  * and print it to the console — without editing {@code application.properties} or restarting the application.
  * <p>
- * Rendering runs at build time, in the deployment classloader where the bundled fonts and jfiglet live, through
- * the same {@link BannerRenderer#renderBanner} used for the start-up banner, so the preview matches exactly.
+ * Rendering runs at build time, in the deployment classloader where the bundled fonts and the {@link Figlet}
+ * renderer live, through the same {@link BannerRenderer#renderBanner} used for the start-up banner, so the
+ * preview matches exactly.
  */
 class BannerDevUIProcessor {
 

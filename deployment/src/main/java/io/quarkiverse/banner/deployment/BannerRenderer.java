@@ -3,14 +3,12 @@ package io.quarkiverse.banner.deployment;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.github.lalyos.jfiglet.FigletFont;
-
 import io.quarkiverse.banner.runtime.BannerFont;
 import io.quarkus.builder.Version;
 
 /**
- * Renders a piece of text into a FIGlet ASCII-art banner using jfiglet, using one of the fonts bundled with
- * this extension.
+ * Renders a piece of text into a FIGlet ASCII-art banner using the bundled {@link Figlet} renderer, using one
+ * of the fonts bundled with this extension.
  */
 final class BannerRenderer {
 
@@ -59,7 +57,7 @@ final class BannerRenderer {
             if (is == null) {
                 throw new IOException("Bundled font resource not found: " + resource);
             }
-            return FigletFont.convertOneLine(is, text);
+            return Figlet.convertOneLine(is, text);
         }
     }
 }

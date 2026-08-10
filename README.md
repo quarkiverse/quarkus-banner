@@ -116,3 +116,6 @@ Full documentation lives in the `docs/` directory and is published to
 
 Apache License 2.0 — see [LICENSE](LICENSE). Bundled FIGlet fonts retain their original terms; see
 [FIGLET-FONTS.md](FIGLET-FONTS.md).
+
+Banners are rendered by a small, self-contained FIGlet renderer bundled with the extension (no third-party
+rendering library), so the extension carries no non-Apache runtime or build dependencies for rendering.

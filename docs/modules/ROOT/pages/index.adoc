@@ -30,6 +30,9 @@ own banner. This means:
 
 Unlike Quarkus' own banner, the generated banner is also shown when running tests.
 
+Banners are rendered by a small, self-contained FIGlet renderer bundled with the extension (no third-party
+rendering library), so the extension carries no non-Apache runtime or build dependencies for rendering.
+
 [NOTE]
 ====
 Because the banner is baked at build time, changing the text or font requires a rebuild (or a live-reload in
