@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
+import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerRecorder;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -71,28 +72,30 @@ class BannerProcessor {
      */
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
-    LogConsoleFormatBuildItem installBanner(Optional<GeneratedBannerBuildItem> banner, BannerRecorder recorder,
-            LiveReloadBuildItem liveReload) {
+    LogConsoleFormatBuildItem installBanner(Optional<GeneratedBannerBuildItem> banner, BannerConfig config,
+            BannerRecorder recorder, LiveReloadBuildItem liveReload) {
         if (banner.isEmpty()) {
             return null;
         }
 
         String text = banner.get().getText();
+        BannerContext current = new BannerContext(text, config.color(), config.backgroundColor());
         BannerContext previous = liveReload.getContextObject(BannerContext.class);
-        boolean showBanner = !liveReload.isLiveReload() || previous == null || !text.equals(previous.text());
-        liveReload.setContextObject(BannerContext.class, new BannerContext(text));
+        boolean showBanner = !liveReload.isLiveReload() || previous == null || !current.equals(previous);
+        liveReload.setContextObject(BannerContext.class, current);
 
         if (showBanner && liveReload.isLiveReload()) {
             LOG.debug("Banner changed; repainting it on live reload");
         }
 
-        return new LogConsoleFormatBuildItem(recorder.bannerFormatter(text, showBanner));
+        return new LogConsoleFormatBuildItem(
+                recorder.bannerFormatter(text, showBanner, config.color(), config.backgroundColor()));
     }
 
     /**
-     * Remembers the banner rendered on the previous augmentation so a hot reload can tell whether it changed.
-     * Stored in the {@link LiveReloadBuildItem} context, which survives dev-mode restarts.
+     * Remembers the banner rendered on the previous augmentation (text and colours) so a hot reload can tell
+     * whether it changed. Stored in the {@link LiveReloadBuildItem} context, which survives dev-mode restarts.
      */
-    record BannerContext(String text) {
+    record BannerContext(String text, BannerColor color, BannerColor backgroundColor) {
     }
 }

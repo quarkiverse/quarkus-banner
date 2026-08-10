@@ -73,10 +73,23 @@ quarkus.banner-generator.text=My Service
 
 # One of the bundled fonts (defaults to "standard")
 quarkus.banner-generator.font=doom
+
+# Optional ANSI colours (applied only when the console supports colour)
+quarkus.banner-generator.color=bright-cyan
+quarkus.banner-generator.background-color=blue
 ----
 
 The available configuration properties are listed in the xref:config-reference.adoc[Configuration Reference].
 All of them are fixed at build time.
+
+[NOTE]
+====
+Colour is only emitted when the console supports ANSI colour -- governed by `quarkus.console.color` (and, when
+unset, terminal detection plus the `NO_COLOR` convention). On a non-colour terminal, or when logging to a file,
+the banner is printed as plain text so no escape codes leak into your logs. Accepted colours are `black`, `red`,
+`green`, `yellow`, `blue`, `magenta`, `cyan`, `white` and their `bright-*` variants; `default` keeps the
+terminal's own colour. Because the banner is a full rectangular block, `background-color` fills the whole box.
+====
 
 == Fonts
 

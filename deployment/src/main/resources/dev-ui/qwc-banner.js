@@ -6,7 +6,7 @@ import '@vaadin/checkbox';
 import '@vaadin/button';
 import '@vaadin/icon';
 import { notifier } from 'notifier';
-import { fonts, defaults } from 'build-time-data';
+import { fonts, colors, defaults } from 'build-time-data';
 
 /**
  * Dev UI card page for the Quarkus Banner extension: preview the banner with any bundled font and text, and
@@ -36,6 +36,9 @@ export class QwcBanner extends LitElement {
         .font {
             flex: 0 0 240px;
         }
+        .color {
+            flex: 0 0 180px;
+        }
         .preview {
             flex: 1;
             margin: 0;
@@ -59,6 +62,8 @@ export class QwcBanner extends LitElement {
         _text: { state: true },
         _font: { state: true },
         _powerBy: { state: true },
+        _color: { state: true },
+        _backgroundColor: { state: true },
         _banner: { state: true },
         _error: { state: true },
     };
@@ -68,8 +73,16 @@ export class QwcBanner extends LitElement {
         this._text = defaults.text;
         this._font = defaults.font;
         this._powerBy = defaults.powerBy;
+        this._color = defaults.color;
+        this._backgroundColor = defaults.backgroundColor;
         this._banner = '';
         this._error = '';
+    }
+
+    // The CSS colour for a given colour config value ('' = terminal default), from the build-time data.
+    _css(value) {
+        const choice = colors.find((c) => c.value === value);
+        return choice ? choice.css : '';
     }
 
     connectedCallback() {
@@ -84,6 +97,12 @@ export class QwcBanner extends LitElement {
                     @value-changed="${(e) => { this._text = e.detail.value; this._refresh(); }}"></vaadin-text-field>
                 <vaadin-combo-box class="font" label="Font" .items="${fonts}" .value="${this._font}"
                     @value-changed="${(e) => { this._font = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
+                <vaadin-combo-box class="color" label="Colour" .items="${colors}" item-label-path="label"
+                    item-value-path="value" .value="${this._color}"
+                    @value-changed="${(e) => { this._color = e.detail.value; this.requestUpdate(); }}"></vaadin-combo-box>
+                <vaadin-combo-box class="color" label="Background" .items="${colors}" item-label-path="label"
+                    item-value-path="value" .value="${this._backgroundColor}"
+                    @value-changed="${(e) => { this._backgroundColor = e.detail.value; this.requestUpdate(); }}"></vaadin-combo-box>
                 <vaadin-checkbox label="Powered by Quarkus" ?checked="${this._powerBy}"
                     @checked-changed="${(e) => { this._powerBy = e.detail.value; this._refresh(); }}"></vaadin-checkbox>
                 <vaadin-button theme="primary" @click="${this._print}">
@@ -93,8 +112,15 @@ export class QwcBanner extends LitElement {
             </div>
             ${this._error
                 ? html`<div class="error">${this._error}</div>`
-                : html`<pre class="preview">${this._banner}</pre>`}
+                : html`<pre class="preview" style="${this._previewStyle()}">${this._banner}</pre>`}
         `;
+    }
+
+    // Inline colours for the preview: overrides the defaults only when a colour is chosen.
+    _previewStyle() {
+        const fg = this._css(this._color);
+        const bg = this._css(this._backgroundColor);
+        return `${fg ? `color:${fg};` : ''}${bg ? `background:${bg};` : ''}`;
     }
 
     _refresh() {
@@ -103,7 +129,10 @@ export class QwcBanner extends LitElement {
     }
 
     _print() {
-        this.jsonRpc.display({ text: this._text, font: this._font, powerBy: this._powerBy })
+        this.jsonRpc.display({
+                text: this._text, font: this._font, powerBy: this._powerBy,
+                color: this._color, backgroundColor: this._backgroundColor,
+            })
             .then((response) => {
                 this._apply(response.result);
                 if (!response.result.error) {

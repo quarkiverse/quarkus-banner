@@ -61,6 +61,10 @@ quarkus.banner-generator.text=My Service
 
 # One of the bundled fonts (defaults to "standard")
 quarkus.banner-generator.font=doom
+
+# Optional ANSI colours (applied only when the console supports colour)
+quarkus.banner-generator.color=bright-cyan
+quarkus.banner-generator.background-color=blue
 ```
 
 ## Configuration
@@ -73,6 +77,13 @@ All properties are fixed at build time.
 | `quarkus.banner-generator.text`     | `string`  | `quarkus.application.name` | The text to render as a FIGlet banner.                                                                            |
 | `quarkus.banner-generator.font`     | `enum`    | `standard`                 | The bundled font to use (see [Fonts](#fonts)). Matched case-insensitively; an unknown font is a build-time error. |
 | `quarkus.banner-generator.power-by` | `boolean` | `true`                     | Append a right-aligned `Powered by Quarkus <version>` tagline under the banner.                                   |
+| `quarkus.banner-generator.color`    | `enum`    | `default`                  | Foreground (font) colour. One of the standard ANSI colours or their `bright-` variants; `default` leaves the terminal colour. |
+| `quarkus.banner-generator.background-color` | `enum` | `default`              | Background colour filling the banner box. Same value set as `color`.                                             |
+
+> **Colour** is only emitted when the console supports ANSI colour — governed by `quarkus.console.color` (and, when unset, terminal
+> detection plus the `NO_COLOR` convention). On a non-colour terminal or when logging to a file, the banner is printed as plain text, so no
+> escape codes leak into your logs. Accepted colours: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, and their
+> `bright-*` variants (matched case-insensitively).
 
 ## Fonts
 
