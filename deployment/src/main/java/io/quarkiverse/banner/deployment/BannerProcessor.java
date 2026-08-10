@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerRecorder;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -44,10 +43,11 @@ class BannerProcessor {
                         .orElse("Quarkus"));
 
         try {
-            String banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy());
+            BannerRenderer.Rendered banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy(),
+                    config.color(), config.backgroundColor());
 
             LOG.debugf("Generated banner for '%s' using font '%s'", text, config.font().fileName());
-            return new GeneratedBannerBuildItem(banner);
+            return new GeneratedBannerBuildItem(banner.plain(), banner.colored());
         } catch (IOException ex) {
             LOG.warnf(ex, "Unable to generate banner for text '%s' with font '%s'; keeping the default banner",
                     text, config.font().fileName());
@@ -72,30 +72,30 @@ class BannerProcessor {
      */
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
-    LogConsoleFormatBuildItem installBanner(Optional<GeneratedBannerBuildItem> banner, BannerConfig config,
-            BannerRecorder recorder, LiveReloadBuildItem liveReload) {
+    LogConsoleFormatBuildItem installBanner(Optional<GeneratedBannerBuildItem> banner, BannerRecorder recorder,
+            LiveReloadBuildItem liveReload) {
         if (banner.isEmpty()) {
             return null;
         }
 
-        String text = banner.get().getText();
-        BannerContext current = new BannerContext(text, config.color(), config.backgroundColor());
+        // The coloured banner encodes both the text and every colour, so it alone tells whether anything changed.
+        String colored = banner.get().getColored();
         BannerContext previous = liveReload.getContextObject(BannerContext.class);
-        boolean showBanner = !liveReload.isLiveReload() || previous == null || !current.equals(previous);
-        liveReload.setContextObject(BannerContext.class, current);
+        boolean showBanner = !liveReload.isLiveReload() || previous == null || !colored.equals(previous.colored());
+        liveReload.setContextObject(BannerContext.class, new BannerContext(colored));
 
         if (showBanner && liveReload.isLiveReload()) {
             LOG.debug("Banner changed; repainting it on live reload");
         }
 
         return new LogConsoleFormatBuildItem(
-                recorder.bannerFormatter(text, showBanner, config.color(), config.backgroundColor()));
+                recorder.bannerFormatter(banner.get().getPlain(), colored, showBanner));
     }
 
     /**
-     * Remembers the banner rendered on the previous augmentation (text and colours) so a hot reload can tell
-     * whether it changed. Stored in the {@link LiveReloadBuildItem} context, which survives dev-mode restarts.
+     * Remembers the banner rendered on the previous augmentation so a hot reload can tell whether it changed.
+     * Stored in the {@link LiveReloadBuildItem} context, which survives dev-mode restarts.
      */
-    record BannerContext(String text, BannerColor color, BannerColor backgroundColor) {
+    record BannerContext(String colored) {
     }
 }

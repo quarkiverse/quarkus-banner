@@ -13,7 +13,6 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerFont;
-import io.quarkiverse.banner.runtime.BannerRecorder;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.devui.spi.buildtime.BuildTimeActionBuildItem;
@@ -90,9 +89,7 @@ class BannerDevUIProcessor {
                     Map<String, String> result = render(params);
                     String banner = result.get("banner");
                     if (banner != null) {
-                        String colored = BannerRecorder.colorize(banner + "\n",
-                                toColor(params.get("color")), toColor(params.get("backgroundColor")));
-                        System.out.println(System.lineSeparator() + colored);
+                        System.out.println(System.lineSeparator() + banner);
                     }
                     return result;
                 })
@@ -119,7 +116,11 @@ class BannerDevUIProcessor {
         }
 
         try {
-            return Map.of("banner", BannerRenderer.renderBanner(font, text, powerBy));
+            // The preview and "Print to log" both use the coloured banner; the Dev UI turns its ANSI codes into
+            // styled spans for the on-screen preview and prints it verbatim to the (colour-capable) dev console.
+            BannerRenderer.Rendered banner = BannerRenderer.renderBanner(font, text, powerBy,
+                    toColor(params.get("color")), toColor(params.get("backgroundColor")));
+            return Map.of("banner", banner.colored());
         } catch (IOException ex) {
             return Map.of("error", "Unable to render banner: " + ex.getMessage());
         }

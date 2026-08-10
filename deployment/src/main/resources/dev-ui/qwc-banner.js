@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { JsonRpc } from 'jsonrpc';
 import '@vaadin/text-field';
 import '@vaadin/combo-box';
@@ -79,12 +80,6 @@ export class QwcBanner extends LitElement {
         this._error = '';
     }
 
-    // The CSS colour for a given colour config value ('' = terminal default), from the build-time data.
-    _css(value) {
-        const choice = colors.find((c) => c.value === value);
-        return choice ? choice.css : '';
-    }
-
     connectedCallback() {
         super.connectedCallback();
         this._refresh();
@@ -99,10 +94,10 @@ export class QwcBanner extends LitElement {
                     @value-changed="${(e) => { this._font = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
                 <vaadin-combo-box class="color" label="Colour" .items="${colors}" item-label-path="label"
                     item-value-path="value" .value="${this._color}"
-                    @value-changed="${(e) => { this._color = e.detail.value; this.requestUpdate(); }}"></vaadin-combo-box>
+                    @value-changed="${(e) => { this._color = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
                 <vaadin-combo-box class="color" label="Background" .items="${colors}" item-label-path="label"
                     item-value-path="value" .value="${this._backgroundColor}"
-                    @value-changed="${(e) => { this._backgroundColor = e.detail.value; this.requestUpdate(); }}"></vaadin-combo-box>
+                    @value-changed="${(e) => { this._backgroundColor = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
                 <vaadin-checkbox label="Powered by Quarkus" ?checked="${this._powerBy}"
                     @checked-changed="${(e) => { this._powerBy = e.detail.value; this._refresh(); }}"></vaadin-checkbox>
                 <vaadin-button theme="primary" @click="${this._print}">
@@ -112,27 +107,62 @@ export class QwcBanner extends LitElement {
             </div>
             ${this._error
                 ? html`<div class="error">${this._error}</div>`
-                : html`<pre class="preview" style="${this._previewStyle()}">${this._banner}</pre>`}
+                : html`<pre class="preview">${unsafeHTML(this._ansiToHtml(this._banner))}</pre>`}
         `;
     }
 
-    // Inline colours for the preview: overrides the defaults only when a colour is chosen.
-    _previewStyle() {
-        const fg = this._css(this._color);
-        const bg = this._css(this._backgroundColor);
-        return `${fg ? `color:${fg};` : ''}${bg ? `background:${bg};` : ''}`;
+    _params() {
+        return {
+            text: this._text, font: this._font, powerBy: this._powerBy,
+            color: this._color, backgroundColor: this._backgroundColor,
+        };
     }
 
     _refresh() {
-        this.jsonRpc.render({ text: this._text, font: this._font, powerBy: this._powerBy })
-            .then((response) => this._apply(response.result));
+        this.jsonRpc.render(this._params()).then((response) => this._apply(response.result));
+    }
+
+    // Renders the ANSI-coloured banner as styled HTML spans for the preview (the console gets the raw ANSI).
+    _ansiToHtml(text) {
+        const FG = {
+            30: '#000000', 31: '#cd0000', 32: '#00cd00', 33: '#cdcd00', 34: '#2222ee', 35: '#cd00cd',
+            36: '#00cdcd', 37: '#e5e5e5', 90: '#7f7f7f', 91: '#ff0000', 92: '#00ff00', 93: '#ffff00',
+            94: '#5c5cff', 95: '#ff00ff', 96: '#00ffff', 97: '#ffffff',
+        };
+        const BG = {};
+        Object.keys(FG).forEach((k) => { BG[Number(k) + 10] = FG[k]; });
+        const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        let fg = null;
+        let bg = null;
+        const span = (chunk) => {
+            const styles = [];
+            if (fg) styles.push(`color:${fg}`);
+            if (bg) styles.push(`background:${bg}`);
+            return styles.length ? `<span style="${styles.join(';')}">${escape(chunk)}</span>` : escape(chunk);
+        };
+
+        let out = '';
+        let last = 0;
+        const re = /\x1b\[([0-9;]*)m/g;
+        let match;
+        while ((match = re.exec(text)) !== null) {
+            if (match.index > last) out += span(text.slice(last, match.index));
+            const codes = match[1].split(';').filter((c) => c.length).map(Number);
+            if (codes.length === 0) { fg = null; bg = null; }
+            codes.forEach((c) => {
+                if (c === 0) { fg = null; bg = null; }
+                else if (FG[c]) fg = FG[c];
+                else if (BG[c]) bg = BG[c];
+            });
+            last = re.lastIndex;
+        }
+        if (last < text.length) out += span(text.slice(last));
+        return out;
     }
 
     _print() {
-        this.jsonRpc.display({
-                text: this._text, font: this._font, powerBy: this._powerBy,
-                color: this._color, backgroundColor: this._backgroundColor,
-            })
+        this.jsonRpc.display(this._params())
             .then((response) => {
                 this._apply(response.result);
                 if (!response.result.error) {

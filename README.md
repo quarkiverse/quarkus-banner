@@ -65,6 +65,9 @@ quarkus.banner-generator.font=doom
 # Optional ANSI colours (applied only when the console supports colour)
 quarkus.banner-generator.color=bright-cyan
 quarkus.banner-generator.background-color=blue
+
+# ...or colour parts of the text inline with {colour} markers, for a multi-colour banner:
+quarkus.banner-generator.text={red}My {bright-cyan}Service
 ```
 
 ## Configuration
@@ -84,6 +87,10 @@ All properties are fixed at build time.
 > detection plus the `NO_COLOR` convention). On a non-colour terminal or when logging to a file, the banner is printed as plain text, so no
 > escape codes leak into your logs. Accepted colours: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, and their
 > `bright-*` variants (matched case-insensitively).
+>
+> **Multi-colour banners:** embed `{colour}` markers directly in `text` — e.g. `{red}My {bright-cyan}Service` renders "My" in red and
+> "Service" in bright cyan, with kerning preserved. Markers set the foreground; `background-color` still applies to the whole box. Use
+> `{default}` to return to the terminal colour. A `{token}` that isn't a colour name is left in the text as-is.
 
 ## Fonts
 
