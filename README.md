@@ -8,16 +8,9 @@ Generate a **colourful** [FIGlet](https://en.wikipedia.org/wiki/FIGlet) ASCII-ar
 **build time** from a piece of text and a font, painted in the ANSI colours you choose, and shown at start-up the same way Quarkus renders its own
 banner.
 
-```text
-  __  __         ____                  _
- |  \/  |_   _  / ___|  ___ _ ____   _(_) ___ ___        ← "My" in red…
- | |\/| | | | | \___ \ / _ \ '__\ \ / / |/ __/ _ \       …"Service" in bright cyan
- | |  | | |_| |  ___) |  __/ |   \ V /| | (_|  __/
- |_|  |_|\__, | |____/ \___|_|    \_/ |_|\___\___|
-         |___/
-
-                         Powered by Quarkus 3.x.x
-```
+<p align="center">
+  <img src="docs/modules/ROOT/assets/images/color-banner.svg" alt="Coloured startup banner: My in red, Service in cyan, from quarkus.banner-generator.text={red}My {bright-cyan}Service" width="480">
+</p>
 
 ### Highlights
 
