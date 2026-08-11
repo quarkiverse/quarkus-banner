@@ -57,12 +57,25 @@ final class BannerRenderer {
         Figlet.RenderResult rendered = renderTracked(font, markup.cleanText());
         List<String> rows = splitRows(rendered.banner());
         int width = rows.isEmpty() ? 0 : rows.get(0).length();
-        List<ColorSpan> spans = colorSpans(markup, rendered.columns(), width);
+        BannerColor[] colorForChar = colorForChar(markup, markup.cleanText().length());
 
-        String plain = assemble(rows, List.of(new ColorSpan(0, BannerColor.DEFAULT)), BannerColor.DEFAULT,
-                powerBy, width, BannerColor.DEFAULT);
-        String colored = assemble(rows, spans, background, powerBy, width, foreground);
+        String plain = assemble(rows, null, colorForChar, BannerColor.DEFAULT, BannerColor.DEFAULT, powerBy, width);
+        String colored = assemble(rows, rendered.owner(), colorForChar, foreground, background, powerBy, width);
         return new Rendered(plain, colored);
+    }
+
+    /** The colour that applies to each clean-text character, from the parsed colour transitions. */
+    private static BannerColor[] colorForChar(Markup markup, int length) {
+        BannerColor[] colors = new BannerColor[length];
+        List<Transition> transitions = markup.transitions();
+        int t = 0;
+        for (int c = 0; c < length; c++) {
+            while (t + 1 < transitions.size() && transitions.get(t + 1).index() <= c) {
+                t++;
+            }
+            colors[c] = transitions.get(t).color();
+        }
+        return colors;
     }
 
     /**
@@ -92,20 +105,53 @@ final class BannerRenderer {
         }
     }
 
-    /** Assembles the final banner: each row painted by {@code spans}, then the optional tagline. */
-    private static String assemble(List<String> rows, List<ColorSpan> spans, BannerColor background,
-            boolean powerBy, int width, BannerColor taglineColor) {
+    /**
+     * Assembles the final banner: each row painted cell-by-cell from the ink {@code owner} map, then the
+     * optional tagline. When {@code owner} is {@code null} the banner is emitted plain (no colour codes).
+     */
+    private static String assemble(List<String> rows, int[][] owner, BannerColor[] colorForChar,
+            BannerColor foreground, BannerColor background, boolean powerBy, int width) {
         StringBuilder banner = new StringBuilder();
-        for (String row : rows) {
-            banner.append(paint(row, spans, background)).append('\n');
+        for (int r = 0; r < rows.size(); r++) {
+            if (owner == null) {
+                banner.append(rows.get(r));
+            } else {
+                banner.append(paintRow(rows.get(r), r < owner.length ? owner[r] : new int[0], colorForChar,
+                        background));
+            }
+            banner.append('\n');
         }
         if (powerBy) {
             String poweredBy = "Powered by Quarkus " + Version.getVersion();
             int padding = Math.max(0, width - poweredBy.length());
-            banner.append(colorize(" ".repeat(padding) + poweredBy, taglineColor, background))
+            String tagline = " ".repeat(padding) + poweredBy;
+            banner.append(owner == null ? tagline : colorize(tagline, foreground, background))
                     .append('\n').append('\n');
         }
         return banner.toString();
+    }
+
+    /** Paints one row: runs of cells sharing a colour (from their ink owner) are wrapped together. */
+    private static String paintRow(String row, int[] ownerRow, BannerColor[] colorForChar, BannerColor background) {
+        StringBuilder painted = new StringBuilder();
+        int i = 0;
+        int n = row.length();
+        while (i < n) {
+            BannerColor foreground = colorAt(ownerRow, i, colorForChar);
+            int j = i + 1;
+            while (j < n && colorAt(ownerRow, j, colorForChar) == foreground) {
+                j++;
+            }
+            painted.append(colorize(row.substring(i, j), foreground, background));
+            i = j;
+        }
+        return painted.toString();
+    }
+
+    /** The foreground colour of a single cell: its ink owner's colour, or the terminal default when blank. */
+    private static BannerColor colorAt(int[] ownerRow, int column, BannerColor[] colorForChar) {
+        int owner = column < ownerRow.length ? ownerRow[column] : -1;
+        return owner >= 0 && owner < colorForChar.length ? colorForChar[owner] : BannerColor.DEFAULT;
     }
 
     /** Splits a rendered block into its rows, dropping the trailing empty element left by the final newline. */
@@ -119,20 +165,6 @@ final class BannerRenderer {
             rows.add(parts[i]);
         }
         return rows;
-    }
-
-    /** Paints one banner row: each column span wrapped in its colour (over the shared {@code background}). */
-    private static String paint(String row, List<ColorSpan> spans, BannerColor background) {
-        StringBuilder painted = new StringBuilder();
-        for (int i = 0; i < spans.size(); i++) {
-            int start = Math.min(spans.get(i).start(), row.length());
-            int end = (i + 1 < spans.size()) ? Math.min(spans.get(i + 1).start(), row.length()) : row.length();
-            if (start >= end) {
-                continue;
-            }
-            painted.append(colorize(row.substring(start, end), spans.get(i).color(), background));
-        }
-        return painted.toString();
     }
 
     /** Wraps a single piece of text in the ANSI sequence for {@code foreground}/{@code background}. */
@@ -157,25 +189,6 @@ final class BannerRenderer {
             sgr.append(background.backgroundCode());
         }
         return sgr.append('m').toString();
-    }
-
-    /**
-     * Maps the parsed colour transitions to output columns, giving the colour spans that cover {@code [0, width)}.
-     * A transition before clean-text index {@code k} starts at the column where character {@code k}'s glyph is
-     * placed, so a colour change lands exactly where the next character's ink begins -- kerning included.
-     */
-    private static List<ColorSpan> colorSpans(Markup markup, int[] columns, int width) {
-        List<ColorSpan> spans = new ArrayList<>();
-        for (Transition transition : markup.transitions()) {
-            int index = transition.index();
-            int column = index <= 0 ? 0 : (index < columns.length ? Math.min(width, columns[index]) : width);
-            if (!spans.isEmpty() && spans.get(spans.size() - 1).start() == column) {
-                spans.set(spans.size() - 1, new ColorSpan(column, transition.color()));
-            } else {
-                spans.add(new ColorSpan(column, transition.color()));
-            }
-        }
-        return spans;
     }
 
     /** Splits {@code text} into its clean (marker-free) form and the colour transitions over its indices. */
@@ -214,9 +227,5 @@ final class BannerRenderer {
 
     /** A colour change starting at a clean-text character index. */
     private record Transition(int index, BannerColor color) {
-    }
-
-    /** A colour applied from a starting output column until the next span (or the end of the row). */
-    private record ColorSpan(int start, BannerColor color) {
     }
 }

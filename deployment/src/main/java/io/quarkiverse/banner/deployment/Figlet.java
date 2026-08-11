@@ -60,15 +60,18 @@ final class Figlet {
     }
 
     /**
-     * Renders {@code text} and also reports, for each input character, the output column where its glyph is
-     * placed (kerning included). Used to colour segments of the banner at the right boundaries.
+     * Renders {@code text} and also reports, for every output cell, which input character's ink occupies it.
+     * Used to colour the banner per cell so colours follow each character's actual ink.
      */
     static RenderResult renderTracked(InputStream fontStream, String text) throws IOException {
         return parse(fontStream).renderTracked(text);
     }
 
-    /** A rendered banner together with the start column of each input character's glyph. */
-    record RenderResult(String banner, int[] columns) {
+    /**
+     * A rendered banner together with per-cell ink ownership: {@code owner[row][col]} is the index of the input
+     * character whose ink occupies that cell, or {@code -1} for a blank cell.
+     */
+    record RenderResult(String banner, int[][] owner) {
     }
 
     /**
@@ -185,15 +188,17 @@ final class Figlet {
 
     private RenderResult renderTracked(String text) {
         StringBuilder[] out = new StringBuilder[height];
+        // owner[r][c] is the index of the input character whose visible ink occupies cell (r, c), or -1. It
+        // lets the banner be coloured per cell, which is what slanted/overlapping fonts need: a colour change
+        // follows each character's actual ink rather than a single vertical boundary.
+        int[][] owner = new int[height][0];
         for (int i = 0; i < height; i++) {
             out[i] = new StringBuilder();
         }
         int outLen = 0;
         int prevWidth = 0; // width of the previously placed glyph, for the narrow-character smush guard
-        int[] columns = new int[text.length()]; // output column where each input character's glyph starts
 
         for (int i = 0; i < text.length(); i++) {
-            columns[i] = outLen;
             String[] glyph = glyphs.get((int) text.charAt(i));
             if (glyph == null) {
                 continue; // characters with no glyph in this font are skipped, as FIGlet drivers do
@@ -207,12 +212,16 @@ final class Figlet {
             // the first glyph, which slides it against the left margin and clips its leading blank columns.
             int offset = outLen - smush;
             int newLen = Math.max(outLen, offset + charWidth);
-            columns[i] = Math.max(0, offset);
 
             for (int r = 0; r < height; r++) {
                 StringBuilder row = out[r];
                 while (row.length() < newLen) {
                     row.append(' ');
+                }
+                if (owner[r].length < newLen) {
+                    int from = owner[r].length;
+                    owner[r] = java.util.Arrays.copyOf(owner[r], newLen);
+                    java.util.Arrays.fill(owner[r], from, newLen, -1);
                 }
                 String gr = glyph[r];
                 for (int k = 0; k < charWidth; k++) {
@@ -220,8 +229,14 @@ final class Figlet {
                     if (x < 0) {
                         continue; // clipped off the left edge
                     }
-                    char merged = merge(row.charAt(x), gr.charAt(k));
+                    char glyphChar = gr.charAt(k);
+                    char merged = merge(row.charAt(x), glyphChar);
                     row.setCharAt(x, merged != 0 ? merged : row.charAt(x));
+                    // This character owns the cell where its glyph contributes visible ink; a later,
+                    // overlapping character takes ownership of any cell it smushes into.
+                    if (glyphChar != ' ' && glyphChar != hardBlank) {
+                        owner[r][x] = i;
+                    }
                 }
             }
             outLen = newLen;
@@ -236,7 +251,7 @@ final class Figlet {
             }
             result.append(row).append('\n');
         }
-        return new RenderResult(result.toString(), columns);
+        return new RenderResult(result.toString(), owner);
     }
 
     /**

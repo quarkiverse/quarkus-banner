@@ -72,30 +72,38 @@ class BannerColorTest {
     }
 
     @Test
-    void trackedColumnsLocateEachGlyph() throws IOException {
-        int[] columns;
+    void ownerMapAssignsEachInkedCellToItsCharacter() throws IOException {
+        Figlet.RenderResult rendered;
         try (InputStream is = getClass().getResourceAsStream("/io/quarkiverse/banner/fonts/standard.flf")) {
-            columns = Figlet.renderTracked(is, "Hi").columns();
+            rendered = Figlet.renderTracked(is, "Hi");
         }
-        assertEquals(0, columns[0], "the first glyph starts at column 0");
-        assertTrue(columns[1] > columns[0], "the second glyph starts further right");
+        boolean ownedByH = false;
+        boolean ownedByI = false;
+        boolean blank = false;
+        int maxOwner = -1;
+        for (int[] row : rendered.owner()) {
+            for (int owner : row) {
+                ownedByH |= owner == 0;
+                ownedByI |= owner == 1;
+                blank |= owner == -1;
+                maxOwner = Math.max(maxOwner, owner);
+            }
+        }
+        assertTrue(ownedByH && ownedByI, "both characters own some ink");
+        assertTrue(blank, "blank cells stay unowned");
+        assertTrue(maxOwner <= 1, "no cell is owned by a non-existent character");
     }
 
     @Test
-    void colourBoundaryFollowsKerningAcrossAWordGap() throws IOException {
-        // The colour change before "IT" must land at the column where "IT" is actually placed (kerning
-        // included), not at the wider prefix width -- otherwise the previous colour bleeds onto its ink.
-        int[] columns;
-        try (InputStream is = getClass().getResourceAsStream("/io/quarkiverse/banner/fonts/doom.flf")) {
-            columns = Figlet.renderTracked(is, "Banner IT").columns();
-        }
-        int prefixWidth;
-        try (InputStream is = getClass().getResourceAsStream("/io/quarkiverse/banner/fonts/doom.flf")) {
-            String block = Figlet.convertOneLine(is, "Banner ");
-            prefixWidth = block.indexOf('\n');
-        }
-        // "I" is index 7 in "Banner IT"; its placement column is where the red segment should start.
-        assertTrue(columns[7] <= prefixWidth, "the incoming glyph is kerned at or before the prefix width");
+    void perCellColouringNeverBleedsOrDropsText() throws IOException {
+        // A kerned slant boundary (no space) is where colour used to bleed across letters. Per-cell colouring
+        // must still colour both parts and leave the underlying text untouched.
+        BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.SLANT, "{red}Quar{blue}kus", false,
+                BannerColor.DEFAULT, BannerColor.DEFAULT);
+        String stripped = banner.colored().replaceAll("\\[[0-9;]*m", "");
+        assertEquals(banner.plain(), stripped, "colouring only inserts codes; the text is unchanged");
+        assertTrue(banner.colored().contains(ESC + "[31m"), "expected red (31)");
+        assertTrue(banner.colored().contains(ESC + "[34m"), "expected blue (34)");
     }
 
     @Test
