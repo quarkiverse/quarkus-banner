@@ -18,17 +18,21 @@ public class BannerRecorder {
     private static final String DEFAULT_CONSOLE_FORMAT = "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n";
 
     /**
-     * Builds a console {@link Formatter} that prints the generated {@code banner} as a header and then delegates
-     * to the standard Quarkus console formatter for the actual log records. This mirrors how Quarkus core renders
-     * its own banner (via {@link TextBannerFormatter}), while honouring the user's console format and colour
-     * settings.
+     * Builds a console {@link Formatter} that prints the generated banner as a header and then delegates to the
+     * standard Quarkus console formatter for the actual log records. This mirrors how Quarkus core renders its own
+     * banner (via {@link TextBannerFormatter}), while honouring the user's console format and colour settings.
+     * <p>
+     * The banner is rendered at build time in two forms: {@code coloredBanner} (with ANSI colour codes) and
+     * {@code plainBanner} (without). The colour version is installed only when the console supports ANSI colour, so
+     * log files and colour-less terminals always get the plain banner and never see stray escape codes.
      * <p>
      * When {@code showBanner} is {@code false} the plain delegate formatter is returned instead, so the banner is
      * not repainted. A formatter is still supplied in that case so Quarkus core's own banner stays suppressed; this
      * lets dev-mode hot reloads that don't change the banner stay quiet while still forcing a reprint when it does
      * change.
      */
-    public RuntimeValue<Optional<Formatter>> bannerFormatter(String banner, boolean showBanner) {
+    public RuntimeValue<Optional<Formatter>> bannerFormatter(String plainBanner, String coloredBanner,
+            boolean showBanner) {
         Config config = ConfigProvider.getConfig();
 
         String format = config.getOptionalValue("quarkus.log.console.format", String.class)
@@ -45,6 +49,7 @@ public class BannerRecorder {
             return new RuntimeValue<>(Optional.of(delegate));
         }
 
+        String banner = color ? coloredBanner : plainBanner;
         String text = banner.endsWith("\n") ? banner : banner + "\n";
         Formatter formatter = new TextBannerFormatter(TextBannerFormatter.createStringSupplier(text), delegate);
 

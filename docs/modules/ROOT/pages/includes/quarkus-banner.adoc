@@ -93,5 +93,49 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`+++true+++`
 
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-color]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-color[`+++quarkus.banner-generator.color+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.color+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The foreground colour the banner is painted in.
+
+Colour is only applied when the console supports ANSI colour (governed by `quarkus.console.color` and terminal detection); otherwise the banner is printed as plain text. Defaults to `default`, which leaves the terminal's own colour untouched.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_COLOR+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_COLOR+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`default`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `bright-black`, `bright-red`, `bright-green`, `bright-yellow`, `bright-blue`, `bright-magenta`, `bright-cyan`, `bright-white`
+|`+++default+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-background-color]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-background-color[`+++quarkus.banner-generator.background-color+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.background-color+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The background colour the banner is painted on. Because the banner is a full rectangular block, this fills the whole box behind the text. Subject to the same ANSI colour support as `color()`.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_BACKGROUND_COLOR+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_BACKGROUND_COLOR+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`default`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `bright-black`, `bright-red`, `bright-green`, `bright-yellow`, `bright-blue`, `bright-magenta`, `bright-cyan`, `bright-white`
+|`+++default+++`
+
 |===
 

@@ -2,21 +2,33 @@
 
 include::./includes/attributes.adoc[]
 
-Generate a https://en.wikipedia.org/wiki/FIGlet[FIGlet] ASCII-art startup banner for your Quarkus
-application -- rendered at *build time* from a piece of text and a font, and shown at start-up the same way
-Quarkus renders its own banner.
+Generate a *colourful* https://en.wikipedia.org/wiki/FIGlet[FIGlet] ASCII-art startup banner for your Quarkus
+application -- rendered at *build time* from a piece of text and a font, painted in the ANSI colours you choose,
+and shown at start-up the same way Quarkus renders its own banner.
 
 [source,text]
 ----
   __  __         ____                  _
- |  \/  |_   _  / ___|  ___ _ ____   _(_) ___ ___
- | |\/| | | | | \___ \ / _ \ '__\ \ / / |/ __/ _ \
+ |  \/  |_   _  / ___|  ___ _ ____   _(_) ___ ___         <-- "My" in red...
+ | |\/| | | | | \___ \ / _ \ '__\ \ / / |/ __/ _ \         ..."Service" in bright cyan
  | |  | | |_| |  ___) |  __/ |   \ V /| | (_|  __/
  |_|  |_|\__, | |____/ \___|_|    \_/ |_|\___\___|
          |___/
 
                          Powered by Quarkus 3.x.x
 ----
+
+== Highlights
+
+* 🎨 *Colour, including multi-colour banners.* Set a foreground and background colour, or colour parts of the text
+inline with `{colour}` markers -- `+quarkus.banner-generator.text={red}My {bright-cyan}Service+` -- painted per-word
+with kerning preserved.
+* 🖥️ *Console-aware.* Colour is emitted only when the terminal supports it; log files and colour-less consoles get a
+clean, plain banner.
+* 🔤 *~250 bundled fonts*, selectable by name and validated at build time.
+* 🧩 *Dev UI preview* to try text, fonts and colours live, and print the result straight to the running app's console.
+* 📦 *No third-party rendering dependencies* -- banners are drawn by a small, self-contained FIGlet renderer bundled
+with the extension.
 
 == How it works
 
@@ -70,10 +82,31 @@ quarkus.banner-generator.text=My Service
 
 # One of the bundled fonts (defaults to "standard")
 quarkus.banner-generator.font=doom
+
+# Optional ANSI colours (applied only when the console supports colour)
+quarkus.banner-generator.color=bright-cyan
+quarkus.banner-generator.background-color=blue
+
+# ...or colour parts of the text inline with {colour} markers, for a multi-colour banner:
+quarkus.banner-generator.text={red}My {bright-cyan}Service
 ----
 
 The available configuration properties are listed in the xref:config-reference.adoc[Configuration Reference].
 All of them are fixed at build time.
+
+[NOTE]
+====
+Colour is only emitted when the console supports ANSI colour -- governed by `quarkus.console.color` (and, when
+unset, terminal detection plus the `NO_COLOR` convention). On a non-colour terminal, or when logging to a file,
+the banner is printed as plain text so no escape codes leak into your logs. Accepted colours are `black`, `red`,
+`green`, `yellow`, `blue`, `magenta`, `cyan`, `white` and their `bright-*` variants; `default` keeps the
+terminal's own colour. Because the banner is a full rectangular block, `background-color` fills the whole box.
+
+For a *multi-colour* banner, embed `{colour}` markers directly in the text -- for example `{red}My {bright-cyan}Service`
+paints "My" red and "Service" bright cyan, with kerning preserved. Markers set the foreground; `background-color` still
+applies to the whole box, and `{default}` returns to the terminal colour. A `{token}` that is not a colour name is left in
+the text verbatim.
+====
 
 == Fonts
 
@@ -125,14 +158,15 @@ https://quarkus.io/guides/dev-ui[Dev UI], available in dev mode at `http://local
 
 Open the card's *Preview* page to test and check your banner:
 
-* *Text* -- type any text to render. It defaults to the configured `quarkus.banner-generator.text` (or the
-  application name).
+* *Text* -- type any text to render, including inline `{colour}` markers. It defaults to the configured
+  `quarkus.banner-generator.text` (or the application name).
 * *Font* -- pick any of the bundled fonts from the selector. It defaults to the configured font.
+* *Colour* and *Background* -- pick the foreground and background colours. They default to the configured colours.
 * *Powered by Quarkus* -- toggle the tagline that is appended under the banner.
 
 The preview updates live as you change any of these -- no restart and no HTTP request required -- so you can
-compare fonts and wording instantly. The rendering uses the exact same code path as the start-up banner, so
-what you see is what you get at boot.
+compare fonts, wording and colours instantly, with colour rendered accurately on screen. The rendering uses the
+exact same code path as the start-up banner, so what you see is what you get at boot.
 
 Press *Print to log* to render the current text and font straight to the application console, exactly as the
 start-up banner would appear:
@@ -152,3 +186,10 @@ start-up banner would appear:
 Once you settle on a text and font, set them in `application.properties` so they are baked into the build.
 
 Every setting on the card is a preview only: it never changes your configuration or the installed banner.
+
+== Rendering
+
+Banners are drawn by a small, self-contained FIGlet renderer bundled with the extension -- a clean-room
+implementation of the public FIGfont v2 standard, validated byte-for-byte against the reference `figlet`
+program. It carries *no third-party rendering library*, so the extension has no non-Apache runtime or build
+dependencies for rendering and nothing extra ends up on your classpath.

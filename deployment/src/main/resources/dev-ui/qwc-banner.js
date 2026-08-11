@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { JsonRpc } from 'jsonrpc';
 import '@vaadin/text-field';
 import '@vaadin/combo-box';
@@ -6,7 +7,7 @@ import '@vaadin/checkbox';
 import '@vaadin/button';
 import '@vaadin/icon';
 import { notifier } from 'notifier';
-import { fonts, defaults } from 'build-time-data';
+import { fonts, colors, defaults } from 'build-time-data';
 
 /**
  * Dev UI card page for the Quarkus Banner extension: preview the banner with any bundled font and text, and
@@ -36,6 +37,9 @@ export class QwcBanner extends LitElement {
         .font {
             flex: 0 0 240px;
         }
+        .color {
+            flex: 0 0 180px;
+        }
         .preview {
             flex: 1;
             margin: 0;
@@ -59,6 +63,8 @@ export class QwcBanner extends LitElement {
         _text: { state: true },
         _font: { state: true },
         _powerBy: { state: true },
+        _color: { state: true },
+        _backgroundColor: { state: true },
         _banner: { state: true },
         _error: { state: true },
     };
@@ -68,6 +74,8 @@ export class QwcBanner extends LitElement {
         this._text = defaults.text;
         this._font = defaults.font;
         this._powerBy = defaults.powerBy;
+        this._color = defaults.color;
+        this._backgroundColor = defaults.backgroundColor;
         this._banner = '';
         this._error = '';
     }
@@ -84,6 +92,12 @@ export class QwcBanner extends LitElement {
                     @value-changed="${(e) => { this._text = e.detail.value; this._refresh(); }}"></vaadin-text-field>
                 <vaadin-combo-box class="font" label="Font" .items="${fonts}" .value="${this._font}"
                     @value-changed="${(e) => { this._font = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
+                <vaadin-combo-box class="color" label="Colour" .items="${colors}" item-label-path="label"
+                    item-value-path="value" .value="${this._color}"
+                    @value-changed="${(e) => { this._color = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
+                <vaadin-combo-box class="color" label="Background" .items="${colors}" item-label-path="label"
+                    item-value-path="value" .value="${this._backgroundColor}"
+                    @value-changed="${(e) => { this._backgroundColor = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
                 <vaadin-checkbox label="Powered by Quarkus" ?checked="${this._powerBy}"
                     @checked-changed="${(e) => { this._powerBy = e.detail.value; this._refresh(); }}"></vaadin-checkbox>
                 <vaadin-button theme="primary" @click="${this._print}">
@@ -93,17 +107,62 @@ export class QwcBanner extends LitElement {
             </div>
             ${this._error
                 ? html`<div class="error">${this._error}</div>`
-                : html`<pre class="preview">${this._banner}</pre>`}
+                : html`<pre class="preview">${unsafeHTML(this._ansiToHtml(this._banner))}</pre>`}
         `;
     }
 
+    _params() {
+        return {
+            text: this._text, font: this._font, powerBy: this._powerBy,
+            color: this._color, backgroundColor: this._backgroundColor,
+        };
+    }
+
     _refresh() {
-        this.jsonRpc.render({ text: this._text, font: this._font, powerBy: this._powerBy })
-            .then((response) => this._apply(response.result));
+        this.jsonRpc.render(this._params()).then((response) => this._apply(response.result));
+    }
+
+    // Renders the ANSI-coloured banner as styled HTML spans for the preview (the console gets the raw ANSI).
+    _ansiToHtml(text) {
+        const FG = {
+            30: '#000000', 31: '#cd0000', 32: '#00cd00', 33: '#cdcd00', 34: '#2222ee', 35: '#cd00cd',
+            36: '#00cdcd', 37: '#e5e5e5', 90: '#7f7f7f', 91: '#ff0000', 92: '#00ff00', 93: '#ffff00',
+            94: '#5c5cff', 95: '#ff00ff', 96: '#00ffff', 97: '#ffffff',
+        };
+        const BG = {};
+        Object.keys(FG).forEach((k) => { BG[Number(k) + 10] = FG[k]; });
+        const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        let fg = null;
+        let bg = null;
+        const span = (chunk) => {
+            const styles = [];
+            if (fg) styles.push(`color:${fg}`);
+            if (bg) styles.push(`background:${bg}`);
+            return styles.length ? `<span style="${styles.join(';')}">${escape(chunk)}</span>` : escape(chunk);
+        };
+
+        let out = '';
+        let last = 0;
+        const re = /\x1b\[([0-9;]*)m/g;
+        let match;
+        while ((match = re.exec(text)) !== null) {
+            if (match.index > last) out += span(text.slice(last, match.index));
+            const codes = match[1].split(';').filter((c) => c.length).map(Number);
+            if (codes.length === 0) { fg = null; bg = null; }
+            codes.forEach((c) => {
+                if (c === 0) { fg = null; bg = null; }
+                else if (FG[c]) fg = FG[c];
+                else if (BG[c]) bg = BG[c];
+            });
+            last = re.lastIndex;
+        }
+        if (last < text.length) out += span(text.slice(last));
+        return out;
     }
 
     _print() {
-        this.jsonRpc.display({ text: this._text, font: this._font, powerBy: this._powerBy })
+        this.jsonRpc.display(this._params())
             .then((response) => {
                 this._apply(response.result);
                 if (!response.result.error) {

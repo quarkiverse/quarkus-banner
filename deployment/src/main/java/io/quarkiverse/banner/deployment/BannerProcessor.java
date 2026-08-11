@@ -43,10 +43,11 @@ class BannerProcessor {
                         .orElse("Quarkus"));
 
         try {
-            String banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy());
+            BannerRenderer.Rendered banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy(),
+                    config.color(), config.backgroundColor());
 
             LOG.debugf("Generated banner for '%s' using font '%s'", text, config.font().fileName());
-            return new GeneratedBannerBuildItem(banner);
+            return new GeneratedBannerBuildItem(banner.plain(), banner.colored());
         } catch (IOException ex) {
             LOG.warnf(ex, "Unable to generate banner for text '%s' with font '%s'; keeping the default banner",
                     text, config.font().fileName());
@@ -77,22 +78,24 @@ class BannerProcessor {
             return null;
         }
 
-        String text = banner.get().getText();
+        // The coloured banner encodes both the text and every colour, so it alone tells whether anything changed.
+        String colored = banner.get().getColored();
         BannerContext previous = liveReload.getContextObject(BannerContext.class);
-        boolean showBanner = !liveReload.isLiveReload() || previous == null || !text.equals(previous.text());
-        liveReload.setContextObject(BannerContext.class, new BannerContext(text));
+        boolean showBanner = !liveReload.isLiveReload() || previous == null || !colored.equals(previous.colored());
+        liveReload.setContextObject(BannerContext.class, new BannerContext(colored));
 
         if (showBanner && liveReload.isLiveReload()) {
             LOG.debug("Banner changed; repainting it on live reload");
         }
 
-        return new LogConsoleFormatBuildItem(recorder.bannerFormatter(text, showBanner));
+        return new LogConsoleFormatBuildItem(
+                recorder.bannerFormatter(banner.get().getPlain(), colored, showBanner));
     }
 
     /**
      * Remembers the banner rendered on the previous augmentation so a hot reload can tell whether it changed.
      * Stored in the {@link LiveReloadBuildItem} context, which survives dev-mode restarts.
      */
-    record BannerContext(String text) {
+    record BannerContext(String colored) {
     }
 }

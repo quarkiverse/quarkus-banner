@@ -4,19 +4,30 @@
 [![Build](https://github.com/quarkiverse/quarkus-banner/actions/workflows/build.yml/badge.svg)](https://github.com/quarkiverse/quarkus-banner/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0)
 
-Generate a [FIGlet](https://en.wikipedia.org/wiki/FIGlet) ASCII-art startup banner for your Quarkus application — rendered at **build time** from a
-piece of text and a font, and shown at start-up the same way Quarkus renders its own banner.
+Generate a **colourful** [FIGlet](https://en.wikipedia.org/wiki/FIGlet) ASCII-art startup banner for your Quarkus application — rendered at
+**build time** from a piece of text and a font, painted in the ANSI colours you choose, and shown at start-up the same way Quarkus renders its own
+banner.
 
 ```text
   __  __         ____                  _
- |  \/  |_   _  / ___|  ___ _ ____   _(_) ___ ___
- | |\/| | | | | \___ \ / _ \ '__\ \ / / |/ __/ _ \
+ |  \/  |_   _  / ___|  ___ _ ____   _(_) ___ ___        ← "My" in red…
+ | |\/| | | | | \___ \ / _ \ '__\ \ / / |/ __/ _ \       …"Service" in bright cyan
  | |  | | |_| |  ___) |  __/ |   \ V /| | (_|  __/
  |_|  |_|\__, | |____/ \___|_|    \_/ |_|\___\___|
          |___/
 
                          Powered by Quarkus 3.x.x
 ```
+
+### Highlights
+
+- 🎨 **Colour, including multi-colour banners.** Set a foreground and background colour, or colour parts of the text inline with
+  `{colour}` markers — `text={red}My {bright-cyan}Service` — and the banner is painted per-word with kerning preserved.
+- 🖥️ **Console-aware.** Colour is only emitted when the terminal supports it; log files and colour-less consoles get a clean, plain banner.
+- 🔤 **~250 bundled fonts**, selectable by name and validated at build time.
+- 🧩 **Dev UI preview** to try text, fonts and colours live — and print the result straight to the running app's console.
+- 📦 **Zero third-party rendering dependencies** — banners are drawn by a small, self-contained FIGlet renderer bundled with the extension
+  (see [below](#rendering)).
 
 ## How it works
 
@@ -61,6 +72,13 @@ quarkus.banner-generator.text=My Service
 
 # One of the bundled fonts (defaults to "standard")
 quarkus.banner-generator.font=doom
+
+# Optional ANSI colours (applied only when the console supports colour)
+quarkus.banner-generator.color=bright-cyan
+quarkus.banner-generator.background-color=blue
+
+# ...or colour parts of the text inline with {colour} markers, for a multi-colour banner:
+quarkus.banner-generator.text={red}My {bright-cyan}Service
 ```
 
 ## Configuration
@@ -73,6 +91,35 @@ All properties are fixed at build time.
 | `quarkus.banner-generator.text`     | `string`  | `quarkus.application.name` | The text to render as a FIGlet banner.                                                                            |
 | `quarkus.banner-generator.font`     | `enum`    | `standard`                 | The bundled font to use (see [Fonts](#fonts)). Matched case-insensitively; an unknown font is a build-time error. |
 | `quarkus.banner-generator.power-by` | `boolean` | `true`                     | Append a right-aligned `Powered by Quarkus <version>` tagline under the banner.                                   |
+| `quarkus.banner-generator.color`    | `enum`    | `default`                  | Foreground (font) colour. One of the standard ANSI colours or their `bright-` variants; `default` leaves the terminal colour. |
+| `quarkus.banner-generator.background-color` | `enum` | `default`              | Background colour filling the banner box. Same value set as `color`.                                             |
+
+## Colour
+
+The banner can be painted in ANSI colour — a single colour, or several at once.
+
+**One colour** for the whole banner (foreground, background, or both):
+
+```properties
+quarkus.banner-generator.color=bright-cyan
+quarkus.banner-generator.background-color=blue
+```
+
+**Multiple colours** — embed `{colour}` markers directly in the text and each part is painted independently, with the FIGlet kerning
+preserved so the letters still tuck together:
+
+```properties
+quarkus.banner-generator.text={red}My {bright-cyan}Service
+```
+
+- Markers set the **foreground**; `background-color` still fills the whole box behind every colour.
+- `{default}` returns to the terminal's own colour, and a `{token}` that isn't a colour name is left in the text verbatim.
+- Accepted colours: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, and their `bright-*` variants (matched
+  case-insensitively); `default` leaves the terminal colour untouched.
+
+**Colour is only emitted when the console supports it** — governed by `quarkus.console.color` (and, when unset, terminal detection plus the
+`NO_COLOR` convention). Both a colour and a plain version of the banner are produced at build time, and the runtime installs whichever suits
+the console, so log files and colour-less terminals never see stray escape codes.
 
 ## Fonts
 
@@ -102,10 +149,16 @@ This has no effect in production (the interactive console only runs in dev and t
 ### Dev UI
 
 In dev mode the extension adds a **Quarkus Banner** card to the Dev UI (`http://localhost:8080/q/dev-ui/`). Its **Preview**
-page lets you type any text, pick any bundled font, and toggle the *Powered by Quarkus* tagline, with a live preview of the
-rendered banner — no restart and no HTTP request needed. A **Print to log** button renders the banner straight to the
-application console. Because a build-time config change only takes effect on the next request in dev mode, the Dev UI is the
-quickest way to try fonts and text while iterating.
+page lets you type any text (including inline `{colour}` markers), pick any bundled font, choose the foreground and background
+colours, and toggle the *Powered by Quarkus* tagline — all with a live, colour-accurate preview, no restart and no HTTP request
+needed. A **Print to log** button renders the banner straight to the application console. Because a build-time config change only
+takes effect on the next request in dev mode, the Dev UI is the quickest way to try fonts, text and colours while iterating.
+
+## Rendering
+
+Banners are drawn by a small, self-contained FIGlet renderer bundled with the extension — a clean-room implementation of the public
+FIGfont v2 standard, validated byte-for-byte against the reference `figlet` program. It carries **no third-party rendering library**,
+so the extension has no non-Apache runtime or build dependencies for rendering, and nothing extra ends up on your classpath.
 
 ## Documentation
 
