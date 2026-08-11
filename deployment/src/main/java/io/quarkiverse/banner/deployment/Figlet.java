@@ -60,6 +60,18 @@ final class Figlet {
     }
 
     /**
+     * Renders {@code text} and also reports, for each input character, the output column where its glyph is
+     * placed (kerning included). Used to colour segments of the banner at the right boundaries.
+     */
+    static RenderResult renderTracked(InputStream fontStream, String text) throws IOException {
+        return parse(fontStream).renderTracked(text);
+    }
+
+    /** A rendered banner together with the start column of each input character's glyph. */
+    record RenderResult(String banner, int[] columns) {
+    }
+
+    /**
      * Parses a {@code .flf} font stream and returns a {@link Figlet} object that represents the font.
      */
     private static Figlet parse(InputStream fontStream) throws IOException {
@@ -168,14 +180,20 @@ final class Figlet {
      * and smushing configuration.
      */
     private String render(String text) {
+        return renderTracked(text).banner();
+    }
+
+    private RenderResult renderTracked(String text) {
         StringBuilder[] out = new StringBuilder[height];
         for (int i = 0; i < height; i++) {
             out[i] = new StringBuilder();
         }
         int outLen = 0;
         int prevWidth = 0; // width of the previously placed glyph, for the narrow-character smush guard
+        int[] columns = new int[text.length()]; // output column where each input character's glyph starts
 
         for (int i = 0; i < text.length(); i++) {
+            columns[i] = outLen;
             String[] glyph = glyphs.get((int) text.charAt(i));
             if (glyph == null) {
                 continue; // characters with no glyph in this font are skipped, as FIGlet drivers do
@@ -189,6 +207,7 @@ final class Figlet {
             // the first glyph, which slides it against the left margin and clips its leading blank columns.
             int offset = outLen - smush;
             int newLen = Math.max(outLen, offset + charWidth);
+            columns[i] = Math.max(0, offset);
 
             for (int r = 0; r < height; r++) {
                 StringBuilder row = out[r];
@@ -217,7 +236,7 @@ final class Figlet {
             }
             result.append(row).append('\n');
         }
-        return result.toString();
+        return new RenderResult(result.toString(), columns);
     }
 
     /**

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -68,6 +69,33 @@ class BannerColorTest {
         BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.STANDARD, "Quarkus", true,
                 BannerColor.DEFAULT, BannerColor.DEFAULT);
         assertEquals(banner.plain(), banner.colored(), "with no colour the two versions must match");
+    }
+
+    @Test
+    void trackedColumnsLocateEachGlyph() throws IOException {
+        int[] columns;
+        try (InputStream is = getClass().getResourceAsStream("/io/quarkiverse/banner/fonts/standard.flf")) {
+            columns = Figlet.renderTracked(is, "Hi").columns();
+        }
+        assertEquals(0, columns[0], "the first glyph starts at column 0");
+        assertTrue(columns[1] > columns[0], "the second glyph starts further right");
+    }
+
+    @Test
+    void colourBoundaryFollowsKerningAcrossAWordGap() throws IOException {
+        // The colour change before "IT" must land at the column where "IT" is actually placed (kerning
+        // included), not at the wider prefix width -- otherwise the previous colour bleeds onto its ink.
+        int[] columns;
+        try (InputStream is = getClass().getResourceAsStream("/io/quarkiverse/banner/fonts/doom.flf")) {
+            columns = Figlet.renderTracked(is, "Banner IT").columns();
+        }
+        int prefixWidth;
+        try (InputStream is = getClass().getResourceAsStream("/io/quarkiverse/banner/fonts/doom.flf")) {
+            String block = Figlet.convertOneLine(is, "Banner ");
+            prefixWidth = block.indexOf('\n');
+        }
+        // "I" is index 7 in "Banner IT"; its placement column is where the red segment should start.
+        assertTrue(columns[7] <= prefixWidth, "the incoming glyph is kerned at or before the prefix width");
     }
 
     @Test

@@ -54,9 +54,10 @@ final class BannerRenderer {
     static Rendered renderBanner(BannerFont font, String text, boolean powerBy, BannerColor foreground,
             BannerColor background) throws IOException {
         Markup markup = parseMarkup(text, foreground);
-        List<String> rows = splitRows(render(font, markup.cleanText()));
+        Figlet.RenderResult rendered = renderTracked(font, markup.cleanText());
+        List<String> rows = splitRows(rendered.banner());
         int width = rows.isEmpty() ? 0 : rows.get(0).length();
-        List<ColorSpan> spans = colorSpans(font, markup, width);
+        List<ColorSpan> spans = colorSpans(markup, rendered.columns(), width);
 
         String plain = assemble(rows, List.of(new ColorSpan(0, BannerColor.DEFAULT)), BannerColor.DEFAULT,
                 powerBy, width, BannerColor.DEFAULT);
@@ -77,6 +78,17 @@ final class BannerRenderer {
                 throw new IOException("Bundled font resource not found: " + resource);
             }
             return Figlet.convertOneLine(is, text);
+        }
+    }
+
+    /** Renders {@code text} and reports the output column where each character's glyph starts. */
+    private static Figlet.RenderResult renderTracked(BannerFont font, String text) throws IOException {
+        String resource = BUNDLED_FONTS_DIR + font.fileName() + ".flf";
+        try (InputStream is = BannerRenderer.class.getResourceAsStream(resource)) {
+            if (is == null) {
+                throw new IOException("Bundled font resource not found: " + resource);
+            }
+            return Figlet.renderTracked(is, text);
         }
     }
 
@@ -149,14 +161,14 @@ final class BannerRenderer {
 
     /**
      * Maps the parsed colour transitions to output columns, giving the colour spans that cover {@code [0, width)}.
-     * A transition before clean-text index {@code k} starts at the column where rendering the first {@code k}
-     * characters ends, so kerning in the full banner is preserved.
+     * A transition before clean-text index {@code k} starts at the column where character {@code k}'s glyph is
+     * placed, so a colour change lands exactly where the next character's ink begins -- kerning included.
      */
-    private static List<ColorSpan> colorSpans(BannerFont font, Markup markup, int width) throws IOException {
+    private static List<ColorSpan> colorSpans(Markup markup, int[] columns, int width) {
         List<ColorSpan> spans = new ArrayList<>();
         for (Transition transition : markup.transitions()) {
-            int column = transition.index() == 0 ? 0
-                    : Math.min(width, widthOf(font, markup.cleanText().substring(0, transition.index())));
+            int index = transition.index();
+            int column = index <= 0 ? 0 : (index < columns.length ? Math.min(width, columns[index]) : width);
             if (!spans.isEmpty() && spans.get(spans.size() - 1).start() == column) {
                 spans.set(spans.size() - 1, new ColorSpan(column, transition.color()));
             } else {
@@ -164,16 +176,6 @@ final class BannerRenderer {
             }
         }
         return spans;
-    }
-
-    /** The rendered width (columns) of {@code text} in {@code font}; {@code 0} for empty text. */
-    private static int widthOf(BannerFont font, String text) throws IOException {
-        if (text.isEmpty()) {
-            return 0;
-        }
-        String block = render(font, text);
-        int newline = block.indexOf('\n');
-        return newline < 0 ? block.length() : newline;
     }
 
     /** Splits {@code text} into its clean (marker-free) form and the colour transitions over its indices. */
