@@ -6,7 +6,7 @@ Generate a *colourful* https://en.wikipedia.org/wiki/FIGlet[FIGlet] ASCII-art st
 application -- rendered at *build time* from a piece of text and a font, painted in the ANSI colours you choose,
 and shown at start-up the same way Quarkus renders its own banner.
 
-image::color-banner.svg[Coloured startup banner: "My" in red and "Service" in cyan,480]
+image::color-banner.svg[Coloured startup banner: "Quarkus" in white and "Banner" in red,560]
 
 == Highlights
 

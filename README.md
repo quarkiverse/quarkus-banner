@@ -9,7 +9,7 @@ Generate a **colourful** [FIGlet](https://en.wikipedia.org/wiki/FIGlet) ASCII-ar
 banner.
 
 <p align="center">
-  <img src="docs/modules/ROOT/assets/images/color-banner.svg" alt="Coloured startup banner: My in red, Service in cyan, from quarkus.banner-generator.text={red}My {bright-cyan}Service" width="480">
+  <img src="docs/modules/ROOT/assets/images/color-banner.svg" alt="Coloured startup banner: Quarkus in white, Banner in red, from quarkus.banner-generator.text={bright-white}Quarkus {red}Banner" width="560">
 </p>
 
 ### Highlights
