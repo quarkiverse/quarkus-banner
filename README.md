@@ -14,11 +14,12 @@ banner.
 
 ### Highlights
 
-- 🎨 **Colour, including multi-colour banners.** Set a foreground and background colour, or colour parts of the text inline with
-  `{colour}` markers — `text={red}My {bright-cyan}Service` — and the banner is painted per-word with kerning preserved.
+- 🎨 **Colour, including multi-colour banners.** Named ANSI colours, `orange`, or any `#rrggbb` hex — set a foreground and background, or
+  colour parts of the text inline with `{colour}` markers (`text={red}My {bright-cyan}Service`), painted per-character so kerning is preserved.
+- 🧱 **Multi-line banners** — split the text with `\n` and align each line `left`, `center`, or `right`, with configurable spacing.
 - 🖥️ **Console-aware.** Colour is only emitted when the terminal supports it; log files and colour-less consoles get a clean, plain banner.
 - 🔤 **~250 bundled fonts**, selectable by name and validated at build time.
-- 🧩 **Dev UI preview** to try text, fonts and colours live — and print the result straight to the running app's console.
+- 🧩 **Dev UI preview** to try text, fonts, colours and layout live — and print the result straight to the running app's console.
 - 📦 **Zero third-party rendering dependencies** — banners are drawn by a small, self-contained FIGlet renderer bundled with the extension
   (see [below](#rendering)).
 
@@ -66,12 +67,16 @@ quarkus.banner-generator.text=My Service
 # One of the bundled fonts (defaults to "standard")
 quarkus.banner-generator.font=doom
 
-# Optional ANSI colours (applied only when the console supports colour)
+# Optional ANSI colours (a name, orange, or a #rrggbb hex; applied only when the console supports colour)
 quarkus.banner-generator.color=bright-cyan
 quarkus.banner-generator.background-color=blue
+```
 
-# ...or colour parts of the text inline with {colour} markers, for a multi-colour banner:
-quarkus.banner-generator.text={red}My {bright-cyan}Service
+Colour parts of the text inline with `{colour}` markers, and split it into lines with `\n`:
+
+```properties
+quarkus.banner-generator.text={red}My \n{#33ccff}Service
+quarkus.banner-generator.alignment=center
 ```
 
 ## Configuration
@@ -84,8 +89,10 @@ All properties are fixed at build time.
 | `quarkus.banner-generator.text`     | `string`  | `quarkus.application.name` | The text to render as a FIGlet banner.                                                                            |
 | `quarkus.banner-generator.font`     | `enum`    | `standard`                 | The bundled font to use (see [Fonts](#fonts)). Matched case-insensitively; an unknown font is a build-time error. |
 | `quarkus.banner-generator.power-by` | `boolean` | `true`                     | Append a right-aligned `Powered by Quarkus <version>` tagline under the banner.                                   |
-| `quarkus.banner-generator.color`    | `enum`    | `default`                  | Foreground (font) colour. One of the standard ANSI colours or their `bright-` variants; `default` leaves the terminal colour. |
-| `quarkus.banner-generator.background-color` | `enum` | `default`              | Background colour filling the banner box. Same value set as `color`.                                             |
+| `quarkus.banner-generator.color`    | `string`  | `default`                  | Foreground (font) colour: a name, `orange`, a `#rgb`/`#rrggbb` hex colour, or `default` (see [Colour](#colour)). An unknown value is a build-time error. |
+| `quarkus.banner-generator.background-color` | `string` | `default`             | Background colour filling the banner box. Same value set as `color`.                                             |
+| `quarkus.banner-generator.alignment` | `enum`   | `left`                     | How each line of a multi-line banner is positioned: `left`, `center`, or `right` (see [Multiple lines](#multiple-lines)). |
+| `quarkus.banner-generator.line-spacing` | `int` | `1`                        | Blank rows inserted between the lines of a multi-line banner.                                                     |
 
 ## Colour
 
