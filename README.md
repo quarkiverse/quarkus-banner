@@ -106,9 +106,10 @@ quarkus.banner-generator.text={red}My {bright-cyan}Service
 ```
 
 - Markers set the **foreground**; `background-color` still fills the whole box behind every colour.
-- `{default}` returns to the terminal's own colour, and a `{token}` that isn't a colour name is left in the text verbatim.
-- Accepted colours: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, and their `bright-*` variants (matched
-  case-insensitively); `default` leaves the terminal colour untouched.
+- `{default}` returns to the terminal's own colour, and a `{token}` that isn't a colour is left in the text verbatim.
+- Accepted colours: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `orange`, and their `bright-*` variants
+  (matched case-insensitively); any `#rgb` / `#rrggbb` **hex** colour (e.g. `{#ff8800}` or `color=#33ccff`); or `default`. Hex and
+  `orange` use 24-bit truecolor, so they need a truecolor-capable terminal.
 
 **Colour is only emitted when the console supports it** — governed by `quarkus.console.color` (and, when unset, terminal detection plus the
 `NO_COLOR` convention). Both a colour and a plain version of the banner are produced at build time, and the runtime installs whichever suits

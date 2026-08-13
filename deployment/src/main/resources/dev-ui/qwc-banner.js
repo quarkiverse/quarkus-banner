@@ -92,11 +92,11 @@ export class QwcBanner extends LitElement {
                     @value-changed="${(e) => { this._text = e.detail.value; this._refresh(); }}"></vaadin-text-field>
                 <vaadin-combo-box class="font" label="Font" .items="${fonts}" .value="${this._font}"
                     @value-changed="${(e) => { this._font = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
-                <vaadin-combo-box class="color" label="Colour" .items="${colors}" item-label-path="label"
-                    item-value-path="value" .value="${this._color}"
+                <vaadin-combo-box class="color" label="Colour" allow-custom-value helper-text="name or #rrggbb"
+                    .items="${colors}" item-label-path="label" item-value-path="value" .value="${this._color}"
                     @value-changed="${(e) => { this._color = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
-                <vaadin-combo-box class="color" label="Background" .items="${colors}" item-label-path="label"
-                    item-value-path="value" .value="${this._backgroundColor}"
+                <vaadin-combo-box class="color" label="Background" allow-custom-value helper-text="name or #rrggbb"
+                    .items="${colors}" item-label-path="label" item-value-path="value" .value="${this._backgroundColor}"
                     @value-changed="${(e) => { this._backgroundColor = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
                 <vaadin-checkbox label="Powered by Quarkus" ?checked="${this._powerBy}"
                     @checked-changed="${(e) => { this._powerBy = e.detail.value; this._refresh(); }}"></vaadin-checkbox>
@@ -150,11 +150,17 @@ export class QwcBanner extends LitElement {
             if (match.index > last) out += span(text.slice(last, match.index));
             const codes = match[1].split(';').filter((c) => c.length).map(Number);
             if (codes.length === 0) { fg = null; bg = null; }
-            codes.forEach((c) => {
+            for (let k = 0; k < codes.length; k++) {
+                const c = codes[k];
                 if (c === 0) { fg = null; bg = null; }
+                else if ((c === 38 || c === 48) && codes[k + 1] === 2) {
+                    const rgb = `rgb(${codes[k + 2] || 0},${codes[k + 3] || 0},${codes[k + 4] || 0})`;
+                    if (c === 38) fg = rgb; else bg = rgb;
+                    k += 4;
+                }
                 else if (FG[c]) fg = FG[c];
                 else if (BG[c]) bg = BG[c];
-            });
+            }
             last = re.lastIndex;
         }
         if (last < text.length) out += span(text.slice(last));

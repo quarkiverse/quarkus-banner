@@ -89,13 +89,14 @@ All of them are fixed at build time.
 Colour is only emitted when the console supports ANSI colour -- governed by `quarkus.console.color` (and, when
 unset, terminal detection plus the `NO_COLOR` convention). On a non-colour terminal, or when logging to a file,
 the banner is printed as plain text so no escape codes leak into your logs. Accepted colours are `black`, `red`,
-`green`, `yellow`, `blue`, `magenta`, `cyan`, `white` and their `bright-*` variants; `default` keeps the
-terminal's own colour. Because the banner is a full rectangular block, `background-color` fills the whole box.
+`green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `orange` and their `bright-*` variants; any `#rgb` / `#rrggbb`
+hex colour; or `default`. Hex and `orange` use 24-bit truecolor, so they need a truecolor-capable terminal. Because the
+banner is a full rectangular block, `background-color` fills the whole box.
 
 For a *multi-colour* banner, embed `{colour}` markers directly in the text -- for example `{red}My {bright-cyan}Service`
-paints "My" red and "Service" bright cyan, with kerning preserved. Markers set the foreground; `background-color` still
-applies to the whole box, and `{default}` returns to the terminal colour. A `{token}` that is not a colour name is left in
-the text verbatim.
+paints "My" red and "Service" bright cyan, with kerning preserved. Markers accept the same values (including `{#ff8800}`
+and `{orange}`), set the foreground, and `{default}` returns to the terminal colour; a `{token}` that is not a colour is
+left in the text verbatim.
 ====
 
 == Fonts

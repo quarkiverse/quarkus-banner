@@ -50,17 +50,21 @@ public interface BannerConfig {
     /**
      * The foreground colour the banner is painted in.
      * <p>
+     * Accepts a named colour ({@code black}, {@code red}, {@code green}, {@code yellow}, {@code blue},
+     * {@code magenta}, {@code cyan}, {@code white}, {@code orange}, and their {@code bright-} variants), a
+     * {@code #rgb} / {@code #rrggbb} hex colour, or {@code default} to leave the terminal's own colour untouched.
+     * An unknown value is a build-time error.
+     * <p>
      * Colour is only applied when the console supports ANSI colour (governed by {@code quarkus.console.color}
-     * and terminal detection); otherwise the banner is printed as plain text. Defaults to {@code default}, which
-     * leaves the terminal's own colour untouched.
+     * and terminal detection); otherwise the banner is printed as plain text.
      */
     @WithDefault("default")
-    BannerColor color();
+    String color();
 
     /**
      * The background colour the banner is painted on. Because the banner is a full rectangular block, this fills
-     * the whole box behind the text. Subject to the same ANSI colour support as {@link #color()}.
+     * the whole box behind the text. Same value set as {@link #color()}; subject to the same ANSI colour support.
      */
     @WithDefault("default")
-    BannerColor backgroundColor();
+    String backgroundColor();
 }

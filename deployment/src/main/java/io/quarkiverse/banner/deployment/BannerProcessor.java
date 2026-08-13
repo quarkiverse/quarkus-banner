@@ -8,6 +8,7 @@ import org.jboss.logging.Logger;
 
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerRecorder;
+import io.quarkiverse.banner.runtime.ResolvedColor;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
@@ -42,9 +43,12 @@ class BannerProcessor {
                         .getOptionalValue("quarkus.application.name", String.class)
                         .orElse("Quarkus"));
 
+        ResolvedColor foreground = resolveColor(config.color(), "quarkus.banner-generator.color");
+        ResolvedColor background = resolveColor(config.backgroundColor(), "quarkus.banner-generator.background-color");
+
         try {
             BannerRenderer.Rendered banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy(),
-                    config.color(), config.backgroundColor());
+                    foreground, background);
 
             LOG.debugf("Generated banner for '%s' using font '%s'", text, config.font().fileName());
             return new GeneratedBannerBuildItem(banner.plain(), banner.colored());
@@ -53,6 +57,16 @@ class BannerProcessor {
                     text, config.font().fileName());
             return null;
         }
+    }
+
+    /** Resolves a configured colour value, failing the build with a clear message when it is not a valid colour. */
+    private static ResolvedColor resolveColor(String value, String property) {
+        ResolvedColor color = ResolvedColor.parse(value);
+        if (color == null) {
+            throw new IllegalArgumentException("Invalid value '" + value + "' for " + property
+                    + ". Use a colour name (e.g. red, bright-cyan, orange), a #rrggbb hex colour, or default.");
+        }
+        return color;
     }
 
     /**

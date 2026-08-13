@@ -4,12 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerFont;
+import io.quarkiverse.banner.runtime.ResolvedColor;
 import io.quarkus.builder.Version;
 
 /**
@@ -17,10 +16,10 @@ import io.quarkus.builder.Version;
  * of the fonts bundled with this extension.
  * <p>
  * The text may contain inline colour markers of the form <code>{colour}</code> (for example
- * <code>{red}Quar{cyan}kus</code>) to paint different parts of the banner in different colours. Markers name a
- * {@link BannerColor} (the standard ANSI colours and their {@code bright-} variants, or {@code default}); an
- * unrecognised {@code {token}} is left in the text verbatim. A global foreground and background colour may also
- * be supplied and apply to any text not covered by an inline marker.
+ * <code>{red}Quar{cyan}kus</code>) to paint different parts of the banner in different colours. A marker is a
+ * colour name, {@code orange}, a {@code #rrggbb} hex colour, or {@code default} (see
+ * {@link ResolvedColor#parse}); an unrecognised {@code {token}} is left in the text verbatim. A global
+ * foreground and background colour may also be supplied and apply to any text not covered by an inline marker.
  * <p>
  * Every render produces <em>both</em> a colour and a plain version of the banner (see {@link Rendered}); the
  * runtime picks whichever suits the console, so no ANSI codes ever leak onto a colour-less terminal or into a
@@ -34,7 +33,7 @@ final class BannerRenderer {
     private static final String ESC = "\u001b";
     private static final String RESET = ESC + "[0m";
     /** An inline colour marker: {@code {name}} where {@code name} looks like a colour (letters and hyphens). */
-    private static final Pattern MARKER = Pattern.compile("\\{([A-Za-z][A-Za-z-]*)\\}");
+    private static final Pattern MARKER = Pattern.compile("\\{([A-Za-z0-9#-]+)\\}");
 
     private BannerRenderer() {
     }
@@ -51,22 +50,23 @@ final class BannerRenderer {
      * @return the banner in both its plain and coloured forms
      * @throws IOException if the font resource cannot be read or the text cannot be rendered
      */
-    static Rendered renderBanner(BannerFont font, String text, boolean powerBy, BannerColor foreground,
-            BannerColor background) throws IOException {
+    static Rendered renderBanner(BannerFont font, String text, boolean powerBy, ResolvedColor foreground,
+            ResolvedColor background) throws IOException {
         Markup markup = parseMarkup(text, foreground);
         Figlet.RenderResult rendered = renderTracked(font, markup.cleanText());
         List<String> rows = splitRows(rendered.banner());
         int width = rows.isEmpty() ? 0 : rows.get(0).length();
-        BannerColor[] colorForChar = colorForChar(markup, markup.cleanText().length());
+        ResolvedColor[] colorForChar = colorForChar(markup, markup.cleanText().length());
 
-        String plain = assemble(rows, null, colorForChar, BannerColor.DEFAULT, BannerColor.DEFAULT, powerBy, width);
+        String plain = assemble(rows, null, colorForChar, ResolvedColor.DEFAULT, ResolvedColor.DEFAULT, powerBy,
+                width);
         String colored = assemble(rows, rendered.owner(), colorForChar, foreground, background, powerBy, width);
         return new Rendered(plain, colored);
     }
 
     /** The colour that applies to each clean-text character, from the parsed colour transitions. */
-    private static BannerColor[] colorForChar(Markup markup, int length) {
-        BannerColor[] colors = new BannerColor[length];
+    private static ResolvedColor[] colorForChar(Markup markup, int length) {
+        ResolvedColor[] colors = new ResolvedColor[length];
         List<Transition> transitions = markup.transitions();
         int t = 0;
         for (int c = 0; c < length; c++) {
@@ -109,8 +109,8 @@ final class BannerRenderer {
      * Assembles the final banner: each row painted cell-by-cell from the ink {@code owner} map, then the
      * optional tagline. When {@code owner} is {@code null} the banner is emitted plain (no colour codes).
      */
-    private static String assemble(List<String> rows, int[][] owner, BannerColor[] colorForChar,
-            BannerColor foreground, BannerColor background, boolean powerBy, int width) {
+    private static String assemble(List<String> rows, int[][] owner, ResolvedColor[] colorForChar,
+            ResolvedColor foreground, ResolvedColor background, boolean powerBy, int width) {
         StringBuilder banner = new StringBuilder();
         for (int r = 0; r < rows.size(); r++) {
             if (owner == null) {
@@ -132,14 +132,15 @@ final class BannerRenderer {
     }
 
     /** Paints one row: runs of cells sharing a colour (from their ink owner) are wrapped together. */
-    private static String paintRow(String row, int[] ownerRow, BannerColor[] colorForChar, BannerColor background) {
+    private static String paintRow(String row, int[] ownerRow, ResolvedColor[] colorForChar,
+            ResolvedColor background) {
         StringBuilder painted = new StringBuilder();
         int i = 0;
         int n = row.length();
         while (i < n) {
-            BannerColor foreground = colorAt(ownerRow, i, colorForChar);
+            ResolvedColor foreground = colorAt(ownerRow, i, colorForChar);
             int j = i + 1;
-            while (j < n && colorAt(ownerRow, j, colorForChar) == foreground) {
+            while (j < n && colorAt(ownerRow, j, colorForChar).equals(foreground)) {
                 j++;
             }
             painted.append(colorize(row.substring(i, j), foreground, background));
@@ -149,9 +150,9 @@ final class BannerRenderer {
     }
 
     /** The foreground colour of a single cell: its ink owner's colour, or the terminal default when blank. */
-    private static BannerColor colorAt(int[] ownerRow, int column, BannerColor[] colorForChar) {
+    private static ResolvedColor colorAt(int[] ownerRow, int column, ResolvedColor[] colorForChar) {
         int owner = column < ownerRow.length ? ownerRow[column] : -1;
-        return owner >= 0 && owner < colorForChar.length ? colorForChar[owner] : BannerColor.DEFAULT;
+        return owner >= 0 && owner < colorForChar.length ? colorForChar[owner] : ResolvedColor.DEFAULT;
     }
 
     /** Splits a rendered block into its rows, dropping the trailing empty element left by the final newline. */
@@ -168,31 +169,31 @@ final class BannerRenderer {
     }
 
     /** Wraps a single piece of text in the ANSI sequence for {@code foreground}/{@code background}. */
-    static String colorize(String text, BannerColor foreground, BannerColor background) {
+    static String colorize(String text, ResolvedColor foreground, ResolvedColor background) {
         String prefix = sgr(foreground, background);
         return prefix.isEmpty() ? text : prefix + text + RESET;
     }
 
     /** The ANSI SGR prefix for a foreground/background pair, or {@code ""} when both are the default. */
-    private static String sgr(BannerColor foreground, BannerColor background) {
+    private static String sgr(ResolvedColor foreground, ResolvedColor background) {
         if (foreground.isDefault() && background.isDefault()) {
             return "";
         }
         StringBuilder sgr = new StringBuilder(ESC).append('[');
         if (!foreground.isDefault()) {
-            sgr.append(foreground.foregroundCode());
+            sgr.append(foreground.foreground());
         }
         if (!background.isDefault()) {
             if (!foreground.isDefault()) {
                 sgr.append(';');
             }
-            sgr.append(background.backgroundCode());
+            sgr.append(background.background());
         }
         return sgr.append('m').toString();
     }
 
     /** Splits {@code text} into its clean (marker-free) form and the colour transitions over its indices. */
-    private static Markup parseMarkup(String text, BannerColor defaultColor) {
+    private static Markup parseMarkup(String text, ResolvedColor defaultColor) {
         StringBuilder clean = new StringBuilder();
         List<Transition> transitions = new ArrayList<>();
         transitions.add(new Transition(0, defaultColor));
@@ -200,9 +201,9 @@ final class BannerRenderer {
         Matcher matcher = MARKER.matcher(text);
         int last = 0;
         while (matcher.find()) {
-            BannerColor color = colorFor(matcher.group(1));
+            ResolvedColor color = ResolvedColor.parse(matcher.group(1));
             if (color == null) {
-                continue; // not a colour name: leave the "{token}" in the text verbatim
+                continue; // not a colour: leave the "{token}" in the text verbatim
             }
             clean.append(text, last, matcher.start());
             transitions.add(new Transition(clean.length(), color));
@@ -212,20 +213,11 @@ final class BannerRenderer {
         return new Markup(clean.toString(), transitions);
     }
 
-    /** Resolves a marker name (e.g. {@code bright-red}) to a {@link BannerColor}, or {@code null} if unknown. */
-    private static BannerColor colorFor(String name) {
-        try {
-            return BannerColor.valueOf(name.toUpperCase(Locale.ROOT).replace('-', '_'));
-        } catch (IllegalArgumentException notAColour) {
-            return null;
-        }
-    }
-
     /** The marker-free text and the colour transitions over its character indices. */
     private record Markup(String cleanText, List<Transition> transitions) {
     }
 
     /** A colour change starting at a clean-text character index. */
-    private record Transition(int index, BannerColor color) {
+    private record Transition(int index, ResolvedColor color) {
     }
 }

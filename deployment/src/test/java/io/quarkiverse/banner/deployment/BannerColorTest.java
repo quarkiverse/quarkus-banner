@@ -2,6 +2,7 @@ package io.quarkiverse.banner.deployment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,62 +13,103 @@ import org.junit.jupiter.api.Test;
 
 import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerFont;
+import io.quarkiverse.banner.runtime.ResolvedColor;
 
 class BannerColorTest {
 
     private static final String ESC = "\u001b";
 
+    private static ResolvedColor color(String token) {
+        return ResolvedColor.parse(token);
+    }
+
     @Test
     void colorizeWithDefaultsIsANoOp() {
         String text = "AB";
-        assertSame(text, BannerRenderer.colorize(text, BannerColor.DEFAULT, BannerColor.DEFAULT));
+        assertSame(text, BannerRenderer.colorize(text, ResolvedColor.DEFAULT, ResolvedColor.DEFAULT));
     }
 
     @Test
     void colorizeForeground() {
-        assertEquals(ESC + "[31mAB" + ESC + "[0m",
-                BannerRenderer.colorize("AB", BannerColor.RED, BannerColor.DEFAULT));
+        assertEquals(ESC + "[31mAB" + ESC + "[0m", BannerRenderer.colorize("AB", color("red"), ResolvedColor.DEFAULT));
     }
 
     @Test
     void colorizeForegroundAndBackground() {
-        assertEquals(ESC + "[93;44mAB" + ESC + "[0m",
-                BannerRenderer.colorize("AB", BannerColor.BRIGHT_YELLOW, BannerColor.BLUE));
+        assertEquals(ESC + "[93;44mAB" + ESC + "[0m", BannerRenderer.colorize("AB", color("bright-yellow"),
+                color("blue")));
+    }
+
+    @Test
+    void orangeUsesTruecolor() {
+        assertEquals(ESC + "[38;2;255;165;0mAB" + ESC + "[0m",
+                BannerRenderer.colorize("AB", color("orange"), ResolvedColor.DEFAULT));
+    }
+
+    @Test
+    void hexColoursUseTruecolor() {
+        assertEquals(ESC + "[38;2;255;136;0mAB" + ESC + "[0m",
+                BannerRenderer.colorize("AB", color("#ff8800"), ResolvedColor.DEFAULT));
+        // #f80 shorthand expands to #ff8800
+        assertEquals(color("#ff8800"), color("#f80"));
+        // hex as a background
+        assertEquals(ESC + "[48;2;0;0;255mAB" + ESC + "[0m",
+                BannerRenderer.colorize("AB", ResolvedColor.DEFAULT, color("#0000ff")));
+    }
+
+    @Test
+    void colourResolution() {
+        assertTrue(color("default").isDefault());
+        assertTrue(color("").isDefault());
+        assertTrue(color(null).isDefault());
+        assertEquals("31", color("red").foreground());
+        assertEquals("103", color("bright-yellow").background());
+        assertNull(color("not-a-colour"));
+        assertNull(color("#zzzz"));
+    }
+
+    @Test
+    void namedPaletteCodes() {
+        assertEquals("90", BannerColor.BRIGHT_BLACK.foreground());
+        assertEquals("107", BannerColor.BRIGHT_WHITE.background());
+        assertEquals("38;2;255;165;0", BannerColor.ORANGE.foreground());
     }
 
     @Test
     void plainVersionNeverContainsEscapeCodes() throws IOException {
         BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.STANDARD, "{red}Hi{blue}!",
-                true, BannerColor.GREEN, BannerColor.BLUE);
+                true, color("green"), color("blue"));
         assertFalse(banner.plain().contains(ESC), "plain banner must have no ANSI codes");
         assertFalse(banner.plain().isBlank());
     }
 
     @Test
     void inlineMarkersProduceMultipleColours() throws IOException {
-        // "Qu" red then "arkus" cyan: the coloured banner carries both codes, the plain one none.
         BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.STANDARD, "{red}Qu{cyan}arkus",
-                false, BannerColor.DEFAULT, BannerColor.DEFAULT);
-        assertTrue(banner.colored().contains(ESC + "[31m"), "expected red (31) somewhere");
-        assertTrue(banner.colored().contains(ESC + "[36m"), "expected cyan (36) somewhere");
+                false, ResolvedColor.DEFAULT, ResolvedColor.DEFAULT);
+        assertTrue(banner.colored().contains(ESC + "[31m"), "expected red (31)");
+        assertTrue(banner.colored().contains(ESC + "[36m"), "expected cyan (36)");
         assertFalse(banner.plain().contains(ESC));
     }
 
     @Test
+    void inlineHexMarker() throws IOException {
+        BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.STANDARD, "{#ff8800}Hi", false,
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT);
+        assertTrue(banner.colored().contains(ESC + "[38;2;255;136;0m"), "expected the hex colour as truecolor");
+    }
+
+    @Test
     void unknownMarkerIsLeftInTheText() throws IOException {
-        // "{smiley}" is not a colour, so it must survive as literal text (rendered as glyphs), not vanish.
-        String withMarker = BannerRenderer.render(BannerFont.STANDARD, "{smiley}");
-        String plain = BannerRenderer.render(BannerFont.STANDARD, "{smiley}");
-        assertEquals(withMarker, plain);
         BannerRenderer.Rendered rendered = BannerRenderer.renderBanner(BannerFont.STANDARD, "{smiley}", false,
-                BannerColor.DEFAULT, BannerColor.DEFAULT);
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT);
         assertFalse(rendered.plain().isBlank(), "unknown marker should still render as text");
     }
 
     @Test
     void noColourConfiguredYieldsIdenticalPlainAndColoured() throws IOException {
         BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.STANDARD, "Quarkus", true,
-                BannerColor.DEFAULT, BannerColor.DEFAULT);
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT);
         assertEquals(banner.plain(), banner.colored(), "with no colour the two versions must match");
     }
 
@@ -96,20 +138,11 @@ class BannerColorTest {
 
     @Test
     void perCellColouringNeverBleedsOrDropsText() throws IOException {
-        // A kerned slant boundary (no space) is where colour used to bleed across letters. Per-cell colouring
-        // must still colour both parts and leave the underlying text untouched.
         BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.SLANT, "{red}Quar{blue}kus", false,
-                BannerColor.DEFAULT, BannerColor.DEFAULT);
-        String stripped = banner.colored().replaceAll("\\[[0-9;]*m", "");
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT);
+        String stripped = banner.colored().replaceAll(ESC + "\\[[0-9;]*m", "");
         assertEquals(banner.plain(), stripped, "colouring only inserts codes; the text is unchanged");
         assertTrue(banner.colored().contains(ESC + "[31m"), "expected red (31)");
         assertTrue(banner.colored().contains(ESC + "[34m"), "expected blue (34)");
-    }
-
-    @Test
-    void brightColourCodes() {
-        assertEquals(90, BannerColor.BRIGHT_BLACK.foregroundCode());
-        assertEquals(107, BannerColor.BRIGHT_WHITE.backgroundCode());
-        assertEquals(-1, BannerColor.DEFAULT.foregroundCode());
     }
 }

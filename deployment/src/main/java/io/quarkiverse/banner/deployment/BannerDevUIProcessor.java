@@ -1,6 +1,7 @@
 package io.quarkiverse.banner.deployment;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerFont;
+import io.quarkiverse.banner.runtime.ResolvedColor;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.devui.spi.buildtime.BuildTimeActionBuildItem;
@@ -49,10 +51,11 @@ class BannerDevUIProcessor {
                 .toList();
         card.addBuildTimeData("fonts", fonts);
 
-        // The selectable colours, each with the config value, a friendly label and a CSS colour for the preview.
-        List<Map<String, String>> colors = Arrays.stream(BannerColor.values())
-                .map(BannerDevUIProcessor::colorChoice)
-                .toList();
+        // The selectable colours (default first, then the named palette), each with the config value, a
+        // friendly label and a CSS colour for the preview. Arbitrary #rrggbb hex is also allowed via a picker.
+        List<Map<String, String>> colors = new ArrayList<>();
+        colors.add(colorChoice("default", "Default", ""));
+        Arrays.stream(BannerColor.values()).forEach(c -> colors.add(colorChoice(c)));
         card.addBuildTimeData("colors", colors);
 
         // Seed the form with the currently configured values.
@@ -60,8 +63,8 @@ class BannerDevUIProcessor {
         defaults.put("text", config.text().orElseGet(BannerDevUIProcessor::applicationName));
         defaults.put("font", config.font().fileName());
         defaults.put("powerBy", config.powerBy());
-        defaults.put("color", configValue(config.color()));
-        defaults.put("backgroundColor", configValue(config.backgroundColor()));
+        defaults.put("color", config.color());
+        defaults.put("backgroundColor", config.backgroundColor());
         card.addBuildTimeData("defaults", defaults);
 
         card.addPage(Page.webComponentPageBuilder()
@@ -119,7 +122,7 @@ class BannerDevUIProcessor {
             // The preview and "Print to log" both use the coloured banner; the Dev UI turns its ANSI codes into
             // styled spans for the on-screen preview and prints it verbatim to the (colour-capable) dev console.
             BannerRenderer.Rendered banner = BannerRenderer.renderBanner(font, text, powerBy,
-                    toColor(params.get("color")), toColor(params.get("backgroundColor")));
+                    devColor(params.get("color")), devColor(params.get("backgroundColor")));
             return Map.of("banner", banner.colored());
         } catch (IOException ex) {
             return Map.of("error", "Unable to render banner: " + ex.getMessage());
@@ -132,29 +135,23 @@ class BannerDevUIProcessor {
                 .orElse("Quarkus");
     }
 
-    /** The {@code application.properties} value for a colour: the enum name lower-cased with {@code _} to {@code -}. */
-    private static String configValue(BannerColor color) {
-        return color.name().toLowerCase(Locale.ROOT).replace('_', '-');
+    /** Resolves a colour value sent by the Dev UI (name, #hex or default) to a {@link ResolvedColor}. */
+    private static ResolvedColor devColor(Object value) {
+        ResolvedColor color = ResolvedColor.parse(value == null ? null : value.toString());
+        return color == null ? ResolvedColor.DEFAULT : color;
     }
 
-    /** Resolves a colour config value (as sent by the Dev UI) back to a {@link BannerColor}, defaulting safely. */
-    private static BannerColor toColor(Object value) {
-        if (value == null) {
-            return BannerColor.DEFAULT;
-        }
-        try {
-            return BannerColor.valueOf(value.toString().trim().toUpperCase(Locale.ROOT).replace('-', '_'));
-        } catch (IllegalArgumentException ignored) {
-            return BannerColor.DEFAULT;
-        }
-    }
-
-    /** A colour choice for the Dev UI selector: config value, friendly label and a CSS colour for the preview. */
+    /** A colour choice for the Dev UI selector from a named palette colour. */
     private static Map<String, String> colorChoice(BannerColor color) {
+        return colorChoice(color.name().toLowerCase(Locale.ROOT).replace('_', '-'), label(color),
+                CSS.getOrDefault(color, ""));
+    }
+
+    private static Map<String, String> colorChoice(String value, String label, String css) {
         Map<String, String> choice = new LinkedHashMap<>();
-        choice.put("value", configValue(color));
-        choice.put("label", label(color));
-        choice.put("css", CSS.getOrDefault(color, ""));
+        choice.put("value", value);
+        choice.put("label", label);
+        choice.put("css", css);
         return choice;
     }
 
@@ -172,7 +169,6 @@ class BannerDevUIProcessor {
 
     private static Map<BannerColor, String> buildCssPalette() {
         Map<BannerColor, String> css = new LinkedHashMap<>();
-        css.put(BannerColor.DEFAULT, "");
         css.put(BannerColor.BLACK, "#000000");
         css.put(BannerColor.RED, "#cd0000");
         css.put(BannerColor.GREEN, "#00cd00");
@@ -181,6 +177,7 @@ class BannerDevUIProcessor {
         css.put(BannerColor.MAGENTA, "#cd00cd");
         css.put(BannerColor.CYAN, "#00cdcd");
         css.put(BannerColor.WHITE, "#e5e5e5");
+        css.put(BannerColor.ORANGE, "#ffa500");
         css.put(BannerColor.BRIGHT_BLACK, "#7f7f7f");
         css.put(BannerColor.BRIGHT_RED, "#ff0000");
         css.put(BannerColor.BRIGHT_GREEN, "#00ff00");
