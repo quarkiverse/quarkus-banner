@@ -48,7 +48,7 @@ class BannerProcessor {
 
         try {
             BannerRenderer.Rendered banner = BannerRenderer.renderBanner(config.font(), text, config.powerBy(),
-                    foreground, background);
+                    foreground, background, config.alignment(), config.lineSpacing());
 
             LOG.debugf("Generated banner for '%s' using font '%s'", text, config.font().fileName());
             return new GeneratedBannerBuildItem(banner.plain(), banner.colored());

@@ -115,6 +115,23 @@ quarkus.banner-generator.text={red}My {bright-cyan}Service
 `NO_COLOR` convention). Both a colour and a plain version of the banner are produced at build time, and the runtime installs whichever suits
 the console, so log files and colour-less terminals never see stray escape codes.
 
+## Multiple lines
+
+Split the text into lines with `\n` (a literal backslash-n, which is what a `.properties` value delivers — an actual newline works too). Each
+line is rendered as its own FIGlet block and the blocks are stacked:
+
+```properties
+quarkus.banner-generator.text={bright-white}Quarkus\n{red}Banner
+quarkus.banner-generator.alignment=center
+quarkus.banner-generator.line-spacing=1
+```
+
+- `alignment` = `left` (default), `center`, or `right` — positions each line within the width of the widest line.
+- `line-spacing` (default `1`) is the number of blank rows between stacked lines, so a descender like `g` or `j` on one line doesn't touch
+  the line below.
+- Per-line inline `{colour}` markers and the background box still apply; a background fills the banner (including the gaps between lines) but
+  never the `Powered by Quarkus` tagline.
+
 ## Fonts
 
 `quarkus.banner-generator.font` must be one of the **246 FIGlet fonts** bundled with, and tested against, this extension — for example `standard`,

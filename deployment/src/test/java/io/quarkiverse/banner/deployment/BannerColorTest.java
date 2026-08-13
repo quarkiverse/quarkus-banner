@@ -2,6 +2,7 @@ package io.quarkiverse.banner.deployment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +12,7 @@ import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
 
+import io.quarkiverse.banner.runtime.Alignment;
 import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerFont;
 import io.quarkiverse.banner.runtime.ResolvedColor;
@@ -111,6 +113,30 @@ class BannerColorTest {
         BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.STANDARD, "Quarkus", true,
                 ResolvedColor.DEFAULT, ResolvedColor.DEFAULT);
         assertEquals(banner.plain(), banner.colored(), "with no colour the two versions must match");
+    }
+
+    @Test
+    void multiLineStacksAndAligns() throws IOException {
+        // "\n" (a literal backslash-n) splits the text into two stacked FIGlet blocks.
+        BannerRenderer.Rendered left = BannerRenderer.renderBanner(BannerFont.SMALL, "Quarkus\\nHi", false,
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT, Alignment.LEFT, 1);
+        BannerRenderer.Rendered right = BannerRenderer.renderBanner(BannerFont.SMALL, "Quarkus\\nHi", false,
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT, Alignment.RIGHT, 1);
+        BannerRenderer.Rendered single = BannerRenderer.renderBanner(BannerFont.SMALL, "Quarkus", false,
+                ResolvedColor.DEFAULT, ResolvedColor.DEFAULT, Alignment.LEFT, 1);
+
+        assertTrue(left.plain().lines().count() > single.plain().lines().count(), "two blocks stack vertically");
+        assertNotEquals(left.plain(), right.plain(), "alignment changes where the shorter line sits");
+    }
+
+    @Test
+    void backgroundFillsTheBannerButNotTheTagline() throws IOException {
+        BannerRenderer.Rendered banner = BannerRenderer.renderBanner(BannerFont.SMALL, "Hi", true,
+                ResolvedColor.DEFAULT, color("blue"), Alignment.LEFT, 1);
+        assertTrue(banner.colored().contains(ESC + "[44m"), "the banner box carries the background");
+        String tagline = banner.colored().lines().filter(l -> l.contains("Powered by Quarkus")).findFirst()
+                .orElse("<missing>");
+        assertFalse(tagline.contains(ESC), "the tagline carries no colour codes (no background box)");
     }
 
     @Test

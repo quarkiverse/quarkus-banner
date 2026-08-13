@@ -11,6 +11,7 @@ import java.util.Objects;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import io.quarkiverse.banner.runtime.Alignment;
 import io.quarkiverse.banner.runtime.BannerColor;
 import io.quarkiverse.banner.runtime.BannerConfig;
 import io.quarkiverse.banner.runtime.BannerFont;
@@ -57,6 +58,8 @@ class BannerDevUIProcessor {
         colors.add(colorChoice("default", "Default", ""));
         Arrays.stream(BannerColor.values()).forEach(c -> colors.add(colorChoice(c)));
         card.addBuildTimeData("colors", colors);
+        card.addBuildTimeData("alignments",
+                Arrays.stream(Alignment.values()).map(a -> a.name().toLowerCase(Locale.ROOT)).toList());
 
         // Seed the form with the currently configured values.
         Map<String, Object> defaults = new LinkedHashMap<>();
@@ -65,6 +68,8 @@ class BannerDevUIProcessor {
         defaults.put("powerBy", config.powerBy());
         defaults.put("color", config.color());
         defaults.put("backgroundColor", config.backgroundColor());
+        defaults.put("alignment", config.alignment().name().toLowerCase(Locale.ROOT));
+        defaults.put("lineSpacing", config.lineSpacing());
         card.addBuildTimeData("defaults", defaults);
 
         card.addPage(Page.webComponentPageBuilder()
@@ -121,8 +126,15 @@ class BannerDevUIProcessor {
         try {
             // The preview and "Print to log" both use the coloured banner; the Dev UI turns its ANSI codes into
             // styled spans for the on-screen preview and prints it verbatim to the (colour-capable) dev console.
+            int lineSpacing = 1;
+            try {
+                lineSpacing = Integer.parseInt(Objects.toString(params.get("lineSpacing"), "1").trim());
+            } catch (NumberFormatException ignored) {
+                // keep the default
+            }
             BannerRenderer.Rendered banner = BannerRenderer.renderBanner(font, text, powerBy,
-                    devColor(params.get("color")), devColor(params.get("backgroundColor")));
+                    devColor(params.get("color")), devColor(params.get("backgroundColor")),
+                    devAlignment(params.get("alignment")), lineSpacing);
             return Map.of("banner", banner.colored());
         } catch (IOException ex) {
             return Map.of("error", "Unable to render banner: " + ex.getMessage());
@@ -139,6 +151,16 @@ class BannerDevUIProcessor {
     private static ResolvedColor devColor(Object value) {
         ResolvedColor color = ResolvedColor.parse(value == null ? null : value.toString());
         return color == null ? ResolvedColor.DEFAULT : color;
+    }
+
+    /** Resolves an alignment value sent by the Dev UI, defaulting to {@link Alignment#LEFT}. */
+    private static Alignment devAlignment(Object value) {
+        try {
+            return value == null ? Alignment.LEFT
+                    : Alignment.valueOf(value.toString().trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return Alignment.LEFT;
+        }
     }
 
     /** A colour choice for the Dev UI selector from a named palette colour. */

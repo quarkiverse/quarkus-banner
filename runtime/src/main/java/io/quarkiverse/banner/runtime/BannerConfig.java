@@ -67,4 +67,19 @@ public interface BannerConfig {
      */
     @WithDefault("default")
     String backgroundColor();
+
+    /**
+     * The text to render as a multi-line banner: split the {@link #text()} into lines with {@code \n} (a literal
+     * backslash-n, or an actual newline). {@code alignment} positions each rendered line within the width of the
+     * widest line.
+     */
+    @WithDefault("left")
+    Alignment alignment();
+
+    /**
+     * The number of blank rows inserted between the lines of a multi-line banner. Defaults to {@code 1} so
+     * stacked lines are separated even when a line has descenders (for example {@code g} or {@code j}).
+     */
+    @WithDefault("1")
+    int lineSpacing();
 }
