@@ -2,12 +2,14 @@ import { LitElement, html, css } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { JsonRpc } from 'jsonrpc';
 import '@vaadin/text-field';
+import '@vaadin/text-area';
+import '@vaadin/integer-field';
 import '@vaadin/combo-box';
 import '@vaadin/checkbox';
 import '@vaadin/button';
 import '@vaadin/icon';
 import { notifier } from 'notifier';
-import { fonts, colors, defaults } from 'build-time-data';
+import { fonts, colors, alignments, defaults } from 'build-time-data';
 
 /**
  * Dev UI card page for the Quarkus Banner extension: preview the banner with any bundled font and text, and
@@ -32,7 +34,7 @@ export class QwcBanner extends LitElement {
             gap: 15px;
         }
         .text {
-            flex: 1 1 260px;
+            flex: 1 1 100%;
         }
         .font {
             flex: 0 0 240px;
@@ -65,6 +67,8 @@ export class QwcBanner extends LitElement {
         _powerBy: { state: true },
         _color: { state: true },
         _backgroundColor: { state: true },
+        _alignment: { state: true },
+        _lineSpacing: { state: true },
         _banner: { state: true },
         _error: { state: true },
     };
@@ -76,6 +80,8 @@ export class QwcBanner extends LitElement {
         this._powerBy = defaults.powerBy;
         this._color = defaults.color;
         this._backgroundColor = defaults.backgroundColor;
+        this._alignment = defaults.alignment;
+        this._lineSpacing = defaults.lineSpacing;
         this._banner = '';
         this._error = '';
     }
@@ -88,15 +94,20 @@ export class QwcBanner extends LitElement {
     render() {
         return html`
             <div class="controls">
-                <vaadin-text-field class="text" label="Text" .value="${this._text}"
-                    @value-changed="${(e) => { this._text = e.detail.value; this._refresh(); }}"></vaadin-text-field>
+                <vaadin-text-area class="text" label="Text"
+                    helper-text="one line per row · inline colours: {name}, {orange}, {#rrggbb}" .value="${this._text}"
+                    @value-changed="${(e) => { this._text = e.detail.value; this._refresh(); }}"></vaadin-text-area>
                 <vaadin-combo-box class="font" label="Font" .items="${fonts}" .value="${this._font}"
                     @value-changed="${(e) => { this._font = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
-                <vaadin-combo-box class="color" label="Colour" .items="${colors}" item-label-path="label"
-                    item-value-path="value" .value="${this._color}"
+                <vaadin-combo-box class="color" label="Alignment" .items="${alignments}" .value="${this._alignment}"
+                    @value-changed="${(e) => { this._alignment = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
+                <vaadin-integer-field class="color" label="Line gap" min="0" .value="${this._lineSpacing}"
+                    @value-changed="${(e) => { this._lineSpacing = e.detail.value; this._refresh(); }}"></vaadin-integer-field>
+                <vaadin-combo-box class="color" label="Colour" allow-custom-value
+                    .items="${colors}" item-label-path="label" item-value-path="value" .value="${this._color}"
                     @value-changed="${(e) => { this._color = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
-                <vaadin-combo-box class="color" label="Background" .items="${colors}" item-label-path="label"
-                    item-value-path="value" .value="${this._backgroundColor}"
+                <vaadin-combo-box class="color" label="Background" allow-custom-value
+                    .items="${colors}" item-label-path="label" item-value-path="value" .value="${this._backgroundColor}"
                     @value-changed="${(e) => { this._backgroundColor = e.detail.value; this._refresh(); }}"></vaadin-combo-box>
                 <vaadin-checkbox label="Powered by Quarkus" ?checked="${this._powerBy}"
                     @checked-changed="${(e) => { this._powerBy = e.detail.value; this._refresh(); }}"></vaadin-checkbox>
@@ -114,7 +125,8 @@ export class QwcBanner extends LitElement {
     _params() {
         return {
             text: this._text, font: this._font, powerBy: this._powerBy,
-            color: this._color, backgroundColor: this._backgroundColor,
+            color: this._color, backgroundColor: this._backgroundColor, alignment: this._alignment,
+            lineSpacing: this._lineSpacing,
         };
     }
 
@@ -150,11 +162,17 @@ export class QwcBanner extends LitElement {
             if (match.index > last) out += span(text.slice(last, match.index));
             const codes = match[1].split(';').filter((c) => c.length).map(Number);
             if (codes.length === 0) { fg = null; bg = null; }
-            codes.forEach((c) => {
+            for (let k = 0; k < codes.length; k++) {
+                const c = codes[k];
                 if (c === 0) { fg = null; bg = null; }
+                else if ((c === 38 || c === 48) && codes[k + 1] === 2) {
+                    const rgb = `rgb(${codes[k + 2] || 0},${codes[k + 3] || 0},${codes[k + 4] || 0})`;
+                    if (c === 38) fg = rgb; else bg = rgb;
+                    k += 4;
+                }
                 else if (FG[c]) fg = FG[c];
                 else if (BG[c]) bg = BG[c];
-            });
+            }
             last = re.lastIndex;
         }
         if (last < text.length) out += span(text.slice(last));

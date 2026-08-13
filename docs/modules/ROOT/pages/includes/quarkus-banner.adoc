@@ -103,7 +103,9 @@ endif::add-copy-button-to-config-props[]
 --
 The foreground colour the banner is painted in.
 
-Colour is only applied when the console supports ANSI colour (governed by `quarkus.console.color` and terminal detection); otherwise the banner is printed as plain text. Defaults to `default`, which leaves the terminal's own colour untouched.
+Accepts a named colour (`black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `orange`, and their `bright-` variants), a `++#++rgb` / `++#++rrggbb` hex colour, or `default` to leave the terminal's own colour untouched. An unknown value is a build-time error.
+
+Colour is only applied when the console supports ANSI colour (governed by `quarkus.console.color` and terminal detection); otherwise the banner is printed as plain text.
 
 
 ifdef::add-copy-button-to-env-var[]
@@ -113,7 +115,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_BANNER_GENERATOR_COLOR+++`
 endif::add-copy-button-to-env-var[]
 --
-a|`default`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `bright-black`, `bright-red`, `bright-green`, `bright-yellow`, `bright-blue`, `bright-magenta`, `bright-cyan`, `bright-white`
+|string
 |`+++default+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-background-color]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-background-color[`+++quarkus.banner-generator.background-color+++`]##
@@ -124,7 +126,7 @@ endif::add-copy-button-to-config-props[]
 
 [.description]
 --
-The background colour the banner is painted on. Because the banner is a full rectangular block, this fills the whole box behind the text. Subject to the same ANSI colour support as `color()`.
+The background colour the banner is painted on. Because the banner is a full rectangular block, this fills the whole box behind the text. Same value set as `color()`; subject to the same ANSI colour support.
 
 
 ifdef::add-copy-button-to-env-var[]
@@ -134,8 +136,50 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_BANNER_GENERATOR_BACKGROUND_COLOR+++`
 endif::add-copy-button-to-env-var[]
 --
-a|`default`, `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, `bright-black`, `bright-red`, `bright-green`, `bright-yellow`, `bright-blue`, `bright-magenta`, `bright-cyan`, `bright-white`
+|string
 |`+++default+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-alignment]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-alignment[`+++quarkus.banner-generator.alignment+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.alignment+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The text to render as a multi-line banner: split the `text()` into lines with `++\++n` (a literal backslash-n, or an actual newline). `alignment` positions each rendered line within the width of the widest line.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_ALIGNMENT+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_ALIGNMENT+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`left`, `center`, `right`
+|`+++left+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-banner_quarkus-banner-generator-line-spacing]] [.property-path]##link:#quarkus-banner_quarkus-banner-generator-line-spacing[`+++quarkus.banner-generator.line-spacing+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.banner-generator.line-spacing+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The number of blank rows inserted between the lines of a multi-line banner. Defaults to `1` so stacked lines are separated even when a line has descenders (for example `g` or `j`).
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_BANNER_GENERATOR_LINE_SPACING+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_BANNER_GENERATOR_LINE_SPACING+++`
+endif::add-copy-button-to-env-var[]
+--
+|int
+|`+++1+++`
 
 |===
 
